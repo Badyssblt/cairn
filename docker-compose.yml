@@ -1,0 +1,40 @@
+services:
+  cairn:
+    # Remplace `badyssblt` par ton compte GitHub si tu republies l'image.
+    image: ghcr.io/badyssblt/cairn:latest
+    container_name: cairn
+    restart: unless-stopped
+
+    ports:
+      # À garder derrière un reverse-proxy en HTTPS. Ne publie pas ce port
+      # sur l'extérieur : le panneau pilote le démon Docker de l'hôte.
+      - "127.0.0.1:3000:3000"
+
+    volumes:
+      # Pilotage des conteneurs de serveurs. L'entrypoint lit le GID de ce
+      # socket au démarrage : rien à renseigner à la main.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # ⚠️ Le chemin doit être IDENTIQUE des deux côtés.
+      #
+      # Le panneau demande au démon Docker de monter <dataRoot>/<serveur> dans
+      # chaque conteneur de jeu, et le démon résout ce chemin sur l'HÔTE,
+      # pas dans le panneau. Monter ailleurs (par exemple sur /data) créerait
+      # des serveurs pointant vers un chemin inexistant côté hôte.
+      - /srv/gameservers:/srv/gameservers
+
+      # Base SQLite et secret de session. À sauvegarder : c'est tout l'état
+      # du panneau hors dossiers de serveurs.
+      - cairn-data:/app/data
+
+    networks:
+      - minemanager
+
+networks:
+  minemanager:
+    # Nom figé, sans préfixe de projet : c'est le réseau que le panneau crée
+    # et rejoint pour joindre le RCON des serveurs par leur nom de conteneur.
+    name: minemanager
+
+volumes:
+  cairn-data:

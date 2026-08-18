@@ -1,0 +1,4 @@
+# Fins de ligne LF dans le dépôt et dans la copie de travail : autocrlf=true
+# sous WSL réécrirait entrypoint.sh en CRLF, et `#!/bin/sh\r` casse le conteneur.
+* text=auto eol=lf
+*.png binary
