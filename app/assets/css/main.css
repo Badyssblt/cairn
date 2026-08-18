@@ -25,36 +25,44 @@
    statut « en marche ».
 
    La profondeur vient des paliers de valeur entre surfaces, comme des strates
-   de pierre. Aucune ombre portée dans ce fichier, c'est délibéré.
+   de pierre. Aucune ombre portée dans ce fichier, c'est délibéré — dans les
+   deux thèmes.
+
+   Deux variantes, mêmes noms de tokens : les composants ne connaissent que
+   `bg-deepslate`, `text-chalk`, etc. et re-thèment sans rien savoir du thème
+   actif. Le sombre est la valeur de base sur `:root`. Le clair s'applique
+   soit par préférence système (`prefers-color-scheme`, tant qu'aucun choix
+   explicite n'a été posé), soit par bascule manuelle (`data-theme`), qui
+   l'emporte dans les deux sens.
    ========================================================================== */
 
 @theme {
   /* -- Pierre : les strates, du plus profond au plus clair ---------------- */
-  --color-deepslate: #14161c; /* fond de page */
-  --color-stone: #1e212a; /* surface des panneaux */
-  --color-stone-lit: #262a35; /* surface au survol / état actif */
-  --color-vein: #2c313d; /* filets, bordures, lignes de grille */
-  --color-vein-lit: #3a4150; /* bordure au survol */
+  --color-deepslate: #0a0b0f; /* fond de page */
+  --color-stone: #13161f; /* surface des panneaux */
+  --color-stone-lit: #1b1f2c; /* surface au survol / état actif */
+  --color-vein: #232838; /* filets, bordures, lignes de grille */
+  --color-vein-lit: #313850; /* bordure au survol */
 
   /* -- Lumière : la torche, l'accent primaire ----------------------------- */
   --color-torch: #e8913a;
-  --color-torch-lit: #f2a75c;
-  --color-torch-dim: #8a5620;
+  --color-torch-lit: #f5a961;
+  --color-torch-dim: #7a4a1c;
 
   /* -- Lapis : accent secondaire (liens, sélection, info) ----------------- */
   --color-lapis: #4c6fd1;
-  --color-lapis-dim: #2c3f75;
+  --color-lapis-dim: #24345f;
 
   /* -- Texte -------------------------------------------------------------- */
-  --color-chalk: #e6e8ec;
-  --color-ash: #8a909e;
-  --color-ash-dim: #5d636f;
+  --color-chalk: #eceef2;
+  --color-ash: #949ba8;
+  --color-ash-dim: #626977;
 
   /* -- Trio de statut : sémantique uniquement, jamais décoratif ----------- */
-  --color-moss: #5fae6e; /* en marche */
-  --color-moss-dim: #2f5b38;
-  --color-redstone: #d2504a; /* erreur / arrêt brutal */
-  --color-redstone-dim: #6d2a27;
+  --color-moss: #4fbb64; /* en marche */
+  --color-moss-dim: #1f4527;
+  --color-redstone: #dd564f; /* erreur / arrêt brutal */
+  --color-redstone-dim: #5c211f;
 
   /* -- Typographie -------------------------------------------------------- */
   --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
@@ -67,6 +75,62 @@
 
   /* -- Motion : rare et pilotée par la donnée ----------------------------- */
   --ease-block: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* -- Thème clair -----------------------------------------------------------
+   Même famille "pierre", inversée : le gris-ardoise clair remplace le
+   quasi-noir, le blanc est réservé aux surfaces posées dessus (jamais le
+   fond lui-même). Les accents sont assombris pour rester lisibles (AA) sur
+   fond clair — ce ne sont pas les mêmes valeurs que le sombre, juste la même
+   intention. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-deepslate: #eef0f3;
+    --color-stone: #ffffff;
+    --color-stone-lit: #eef1f6;
+    --color-vein: #dde1e8;
+    --color-vein-lit: #c5cad4;
+
+    --color-torch: #b3611a;
+    --color-torch-lit: #c9752b;
+    --color-torch-dim: #f4dcc0;
+
+    --color-lapis: #3556b0;
+    --color-lapis-dim: #dbe3f7;
+
+    --color-chalk: #1a1d24;
+    --color-ash: #5b6170;
+    --color-ash-dim: #8a909e;
+
+    --color-moss: #2f8f45;
+    --color-moss-dim: #d9f0dd;
+    --color-redstone: #c23a34;
+    --color-redstone-dim: #f8dad8;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-deepslate: #eef0f3;
+  --color-stone: #ffffff;
+  --color-stone-lit: #eef1f6;
+  --color-vein: #dde1e8;
+  --color-vein-lit: #c5cad4;
+
+  --color-torch: #b3611a;
+  --color-torch-lit: #c9752b;
+  --color-torch-dim: #f4dcc0;
+
+  --color-lapis: #3556b0;
+  --color-lapis-dim: #dbe3f7;
+
+  --color-chalk: #1a1d24;
+  --color-ash: #5b6170;
+  --color-ash-dim: #8a909e;
+
+  --color-moss: #2f8f45;
+  --color-moss-dim: #d9f0dd;
+  --color-redstone: #c23a34;
+  --color-redstone-dim: #f8dad8;
 }
 
 /* ==========================================================================

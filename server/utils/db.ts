@@ -180,6 +180,22 @@ const MIGRATIONS: string[] = [
   //      visible dans la liste : restaurer l'une ou l'autre n'a pas du tout les
   //      mêmes conséquences sur les mods installés.
   `ALTER TABLE backups ADD COLUMN scope TEXT NOT NULL DEFAULT 'full';`,
+
+  // 13 — Centre de notifications : les mêmes events qu'on annonce sur Discord
+  //      (panne, boucle de redémarrage, sauvegarde ratée) vivent aussi dans le
+  //      panneau, pour ne pas dépendre d'un webhook pour savoir ce qui s'est
+  //      passé chez soi.
+  `
+  CREATE TABLE events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id  TEXT REFERENCES servers(id) ON DELETE CASCADE,
+    level      TEXT NOT NULL,
+    title      TEXT NOT NULL,
+    detail     TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX idx_events_created ON events(created_at DESC);
+  `,
 ]
 
 let instance: Database.Database | null = null

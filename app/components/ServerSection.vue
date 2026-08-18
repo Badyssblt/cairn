@@ -5,7 +5,7 @@ const { server, actionError, busy, act } = useServerDetail()
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl px-5 py-6 lg:px-8">
+  <div class="px-5 py-6 lg:px-8">
     <h1 class="title-display text-xl text-chalk">{{ title }}</h1>
     <p v-if="hint" class="mt-1 text-[13px] text-ash">{{ hint }}</p>
 

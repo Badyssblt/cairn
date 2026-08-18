@@ -5,7 +5,7 @@ import type { Sample } from '#shared/types'
  *
  * C'est la réponse à la question du coût : plutôt que chaque composant affiché
  * interroge Docker de son côté, un unique relevé toutes les 30 s alimente à la
- * fois le rack, les chiffres instantanés et le tick ribbon. Le nombre de
+ * fois le tableau de bord, les chiffres instantanés et le tick ribbon. Le nombre de
  * clients connectés ne change donc rien à la charge.
  */
 const INTERVAL_MS = 30_000
@@ -72,7 +72,10 @@ export default defineNitroPlugin((nitro) => {
           console.error(`[sampler] ${row.id}:`, (e as Error).message)
         }
       }
-      if (++ticks % PURGE_EVERY === 0) purgeOldSamples()
+      if (++ticks % PURGE_EVERY === 0) {
+        purgeOldSamples()
+        purgeOldEvents()
+      }
 
       // Les tâches planifiées se réveillent au même rythme : une granularité
       // de 30 s suffit largement pour un redémarrage nocturne.

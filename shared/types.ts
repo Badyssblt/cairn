@@ -14,6 +14,9 @@ export type ServerState =
 
 export type ServerType = 'VANILLA' | 'PAPER' | 'FORGE' | 'FABRIC' | 'MODPACK'
 
+/** Sévérité d'un event du centre de notifications. */
+export type EventLevel = 'bad' | 'warn' | 'good'
+
 /**
  * Les descriptions s'adressent à quelqu'un qui veut monter un serveur, pas à
  * quelqu'un qui connaît l'écosystème : elles disent à quoi sert chaque type et

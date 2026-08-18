@@ -9,8 +9,7 @@ useHead({ title: () => `${server.value?.name ?? 'Serveur'} — Cairn` })
 
 const isRunning = computed(() => server.value?.state === 'running')
 
-const gb = (mb: number | null | undefined) =>
-  mb === null || mb === undefined ? '—' : (mb / 1024).toFixed(1).replace('.', ',')
+const gb = formatGb
 
 const address = computed(() => addr.value?.address ?? '…')
 
@@ -104,11 +103,13 @@ onMounted(() => {
         C'est ce que tes joueurs saisissent pour te rejoindre.
       </p>
       <p v-if="addressNote" class="mt-1.5 text-[12px] text-torch">{{ addressNote }}</p>
-      <!-- Ce test dit que le serveur écoute, pas que ta box laisse passer :
-           la nuance évite de chercher au mauvais endroit. -->
-      <p v-if="addr && isRunning" class="mt-1.5 font-mono text-[11px] text-ash-dim">
-        {{ addr.listening ? '✓ le port répond sur la machine' : '✗ le port ne répond pas sur la machine' }}
-        — la redirection de ports de ta box n'est pas vérifiable d'ici.
+      <p
+        v-if="addr && isRunning"
+        class="mt-1.5 flex items-center gap-1.5 font-mono text-[11px] text-ash-dim"
+        title="La redirection de ports de ta box n'est pas vérifiable d'ici."
+      >
+        <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="addr.listening ? 'bg-moss' : 'bg-redstone'" />
+        {{ addr.listening ? 'port ouvert' : 'port fermé' }}
       </p>
     </section>
 
@@ -159,7 +160,7 @@ onMounted(() => {
 
     <PlayerHistory v-if="server" :server-id="server.id" class="mt-4" />
 
-    <!-- Le ribbon garde sa place : c'est la même lecture qu'au rack -->
+    <!-- Le ribbon garde sa place : c'est la même lecture qu'au tableau de bord -->
     <section class="mt-4 rounded-slab border border-vein bg-stone/30 p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="eyebrow">Huit dernières minutes</p>
@@ -188,7 +189,7 @@ onMounted(() => {
     </section>
   </ServerSection>
 
-  <div v-else class="mx-auto max-w-5xl px-5 py-20 text-center">
+  <div v-else class="px-5 py-20 text-center">
     <p class="title-display text-chalk">Ce serveur n'existe pas</p>
     <p class="mt-1 text-[13px] text-ash">{{ error ? 'Il a peut-être été supprimé.' : '' }}</p>
     <UiBtn to="/" class="mt-4" size="sm">Retour aux serveurs</UiBtn>

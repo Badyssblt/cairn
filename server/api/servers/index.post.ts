@@ -166,7 +166,7 @@ export default defineEventHandler(async (event) => {
       await createServerContainer(row)
       await startContainer(id)
     } catch (e: any) {
-      // Un échec ne doit pas laisser de serveur fantôme dans le rack : on
+      // Un échec ne doit pas laisser de serveur fantôme dans Docker : on
       // défait ce qui a été écrit avant de remonter l'erreur.
       await removeContainer(id).catch(() => {})
       useDb().prepare('DELETE FROM servers WHERE id = ?').run(id)

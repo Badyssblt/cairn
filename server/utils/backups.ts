@@ -144,7 +144,7 @@ export function startBackup(
       finish(id, reason)
       // Une sauvegarde ratée est silencieuse par nature : sans alerte, on ne
       // s'en aperçoit qu'au moment d'en avoir besoin.
-      notify('bad', `Sauvegarde de ${row.name} échouée`, reason)
+      recordEvent('bad', `Sauvegarde de ${row.name} échouée`, reason, row.id)
     })
     .finally(() => running.delete(row.id))
 

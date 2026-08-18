@@ -29,14 +29,30 @@ const LOADER_VERSION_ENV: Record<string, string> = {
  * qui n'a rien d'évident. Le tag doit donc suivre la version du jeu.
  */
 export function imageForMinecraft(mcVersion: string | null | undefined): string {
-  const m = (mcVersion ?? '').trim().match(/^1\.(\d+)(?:\.(\d+))?/)
-  if (!m) return `${REPO}:java21`
+  const raw = (mcVersion ?? '').trim()
+  const m = raw.match(/^1\.(\d+)(?:\.(\d+))?/)
 
-  const minor = Number(m[1])
-  const patch = Number(m[2] ?? 0)
+  if (m) {
+    const minor = Number(m[1])
+    const patch = Number(m[2] ?? 0)
 
-  if (minor <= 16) return `${REPO}:java8`
-  if (minor < 20 || (minor === 20 && patch < 5)) return `${REPO}:java17`
+    if (minor <= 16) return `${REPO}:java8`
+    if (minor < 20 || (minor === 20 && patch < 5)) return `${REPO}:java17`
+    return `${REPO}:java21`
+  }
+
+  /**
+   * « LATEST » sur un serveur qui n'est pas un modpack installe vraiment la
+   * toute dernière sortie Mojang : le tag doit suivre, pas rester figé sur un
+   * vieux Java par défaut — sans quoi une version qui exige un JDK plus récent
+   * (ex. Minecraft 26+ et Java 25) ne démarre jamais, en boucle.
+   *
+   * Un modpack dont la version reste inconnue (mcVersion vaut `null`, jamais
+   * la chaîne « LATEST » — voir l'appelant) garde le choix prudent : sa
+   * version réelle peut être ancienne, et `latest` casserait ses mixins.
+   */
+  if (raw.toUpperCase() === 'LATEST') return `${REPO}:latest`
+
   return `${REPO}:java21`
 }
 

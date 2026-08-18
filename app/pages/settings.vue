@@ -58,10 +58,13 @@ async function save() {
 
 <template>
   <div>
-    <main class="mx-auto max-w-2xl px-5 py-8">
-      <h1 class="title-display text-2xl text-chalk">Réglages</h1>
+    <header class="border-b border-vein px-5 py-5 lg:px-8">
+      <p class="eyebrow">Panneau</p>
+      <h1 class="title-display mt-1 text-2xl text-chalk">Réglages</h1>
+    </header>
 
-      <form class="mt-8 space-y-8" @submit.prevent="save">
+    <main class="px-5 py-6 lg:px-8">
+      <form class="space-y-8" @submit.prevent="save">
         <section>
           <h2 class="eyebrow">Adresse publique</h2>
           <p class="mt-1.5 text-[13px] text-ash">
@@ -108,20 +111,20 @@ async function save() {
             n'est jamais proposée à un serveur.
           </p>
 
-          <div class="mt-3 grid gap-4 sm:grid-cols-2">
+          <div class="mt-3 grid max-w-lg gap-4 sm:grid-cols-2">
             <UiField v-model.number="totalGb" label="Mémoire totale (Go)" type="number" mono />
             <UiField v-model.number="reserveGb" label="Réserve système (Go)" type="number" mono />
           </div>
 
           <p v-if="data?.capacity" class="mt-3 font-mono text-[11px] text-ash-dim">
-            {{ (data.capacity.allocatedMb / 1024).toFixed(1).replace('.', ',') }} Go alloués ·
-            {{ (data.capacity.freeMb / 1024).toFixed(1).replace('.', ',') }} Go libres
+            {{ formatGb(data.capacity.allocatedMb) }} Go alloués ·
+            {{ formatGb(data.capacity.freeMb) }} Go libres
           </p>
         </section>
 
         <section>
           <h2 class="eyebrow">Emplacement des données</h2>
-          <p class="mt-1.5 font-mono text-[12px] text-ash">{{ data?.dataRoot }}</p>
+          <p class="mt-1.5 font-mono text-[12px] text-chalk">{{ data?.dataRoot }}</p>
           <p class="mt-1 text-[11px] text-ash-dim">
             Défini au démarrage par NUXT_DATA_ROOT. Chaque serveur y reçoit son
             propre dossier.

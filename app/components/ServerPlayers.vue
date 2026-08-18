@@ -90,9 +90,6 @@ onMounted(() => {
     <!-- Ajout par pseudo, pour agir sur quelqu'un d'absent -->
     <section class="rounded-slab border border-vein px-4 py-3.5">
       <h3 class="eyebrow">Ajouter un joueur</h3>
-      <p class="mt-1.5 text-[13px] text-ash">
-        Fonctionne aussi sur un joueur qui n'est pas connecté.
-      </p>
       <div class="mt-3 flex flex-wrap gap-2">
         <input
           v-model="newPlayer"

@@ -9,7 +9,7 @@ interface HostCapacityDto {
 }
 
 /**
- * Le rack, côté interface.
+ * Docker, côté interface.
  *
  * Le rafraîchissement suit la cadence de l'échantillonneur (30 s) : interroger
  * plus vite ne montrerait rien de neuf, seulement le même échantillon relu.
@@ -31,11 +31,20 @@ export function useServers() {
 
   const busy = ref(new Set<string>())
   const actionError = ref<string | null>(null)
+  const { push: toast } = useToast()
+
+  const ACTION_LABEL: Record<'start' | 'stop' | 'restart', string> = {
+    start: 'Démarrage',
+    stop: 'Arrêt',
+    restart: 'Redémarrage',
+  }
 
   async function act(id: string, action: 'start' | 'stop' | 'restart') {
     if (busy.value.has(id)) return
     busy.value = new Set(busy.value).add(id)
     actionError.value = null
+    const name = servers.value.find((s) => s.id === id)?.name ?? id
+    toast(`${ACTION_LABEL[action]} de « ${name} »…`)
     try {
       await $fetch(`/api/servers/${id}/${action}`, { method: 'POST' })
       await refresh()
@@ -54,7 +63,7 @@ export function useServers() {
     let currentDelay = 0
 
     // La cadence suit ce qu'il y a à voir, au lieu d'être fixée une fois pour
-    // toutes : inutile d'interroger toutes les 3 s un rack au repos.
+    // toutes : inutile d'interroger Docker toutes les 3 s au repos.
     watchEffect(() => {
       const installing = servers.value.some((s) => s.state === 'installing')
       const delay = installing ? POLL_MS_INSTALLING : POLL_MS
@@ -68,7 +77,7 @@ export function useServers() {
   }
 
   const combinedError = computed(
-    () => actionError.value ?? (error.value ? 'Le rack n’a pas pu être lu.' : null),
+    () => actionError.value ?? (error.value ? 'Docker n’a pas pu être lu.' : null),
   )
 
   return { servers, host, pending, error: combinedError, refresh, act, busy }

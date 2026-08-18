@@ -22,7 +22,7 @@ export interface Diagnosis {
   /** L'action qui répare, quand elle existe. */
   fix?: string
   /** Section du panneau où agir. */
-  section?: 'files' | 'config' | 'version' | 'backups' | 'console'
+  section?: 'files' | 'config' | 'version' | 'backups' | 'console' | 'maintenance'
   severity: 'error' | 'warning'
   /** La ligne du journal qui a servi de preuve. */
   evidence?: string
@@ -79,6 +79,23 @@ const PATTERNS: Pattern[] = [
   },
 
   /* -- Version de Java inadaptée ---------------------------------------- */
+  {
+    // itzg/mc-server-runner refuse de lancer le jeu et le dit en clair, avant
+    // même que Java n'entre en jeu : le message le plus explicite qui soit,
+    // et pourtant le plus facile à rater au milieu du reste du journal.
+    test: /Minecraft ([\d.]+) and newer requires running the server with Java (\d+) or above/,
+    build: (m) => ({
+      title: 'Java trop ancien pour cette version de Minecraft',
+      detail: `Minecraft ${m[1]} exige Java ${m[2]} ou plus récent ; l'image du conteneur en fournit une plus ancienne.`,
+      fix:
+        "Le serveur doit être reconstruit avec la bonne image : ouvre Entretien, " +
+        "retouche la mémoire allouée (par exemple +1 puis -1) et enregistre — " +
+        "Cairn recrée le conteneur et choisit alors le Java qui convient.",
+      section: 'maintenance',
+      severity: 'error',
+      evidence: m[0],
+    }),
+  },
   {
     test: /has been compiled by a more recent version of the Java Runtime.*?class file version (\d+\.\d+)/s,
     build: () => ({

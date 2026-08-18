@@ -2,8 +2,8 @@
 import { sampleHealth, type MinecraftServer } from '#shared/types'
 
 /**
- * Une unité du rack. Rangée pleine largeur, pas une carte dans une grille :
- * ça se lit comme du matériel en baie, et ça tient encore à huit serveurs.
+ * Un conteneur de la liste. Rangée pleine largeur, pas une carte dans une
+ * grille : ça reste lisible même à huit serveurs.
  */
 const props = defineProps<{ server: MinecraftServer; busy?: boolean }>()
 defineEmits<{ start: []; stop: []; restart: []; console: [] }>()
@@ -19,8 +19,7 @@ const typeLabel = computed(() =>
     : `${props.server.type} ${props.server.mcVersion}`,
 )
 
-const gb = (mb: number | null) =>
-  mb === null ? '—' : (mb / 1024).toFixed(1).replace('.', ',')
+const gb = formatGb
 
 /**
  * La charge : le TPS quand le serveur l'expose (Paper/Spigot), sinon le CPU.
@@ -47,7 +46,7 @@ function tone(s: MinecraftServer) {
     case 'bad':
       return 'text-redstone'
     default:
-      return 'text-ash'
+      return 'text-chalk'
   }
 }
 </script>
@@ -75,12 +74,12 @@ function tone(s: MinecraftServer) {
     </div>
 
     <!-- Mesures : le ribbon porte l'histoire, les chiffres portent l'instant.
-         Largeurs figées : dans un rack, les colonnes doivent s'aligner d'une
-         rangée à l'autre, quel que soit le nombre d'actions à droite. -->
+         Largeurs figées : les colonnes doivent s'aligner d'une rangée à
+         l'autre, quel que soit le nombre d'actions à droite. -->
     <div class="flex flex-col items-start gap-2 md:flex-row md:items-center md:gap-5">
       <!-- Pendant l'installation le ribbon n'a rien à raconter : la barre
            d'avancement prend sa place, à la même largeur pour ne pas décaler
-           les colonnes du rack. -->
+           les colonnes. -->
       <div v-if="isInstalling" class="w-[205px] shrink-0">
         <div class="h-2.5 w-full overflow-hidden rounded-[2px] bg-stone">
           <div
@@ -91,11 +90,11 @@ function tone(s: MinecraftServer) {
       </div>
       <TickRibbon v-else :samples="server.samples" class="shrink-0" />
 
-      <div
-        class="w-full text-left font-mono text-[11px] leading-tight md:w-44 md:shrink-0 md:text-right"
-      >
-        <div :class="load.tone">{{ load.text }}</div>
-        <div class="text-ash-dim">
+      <div class="w-full text-left md:w-44 md:shrink-0 md:text-right">
+        <div class="font-mono text-[15px] font-semibold leading-tight" :class="load.tone">
+          {{ load.text }}
+        </div>
+        <div class="mt-0.5 font-mono text-[11px] leading-tight text-ash-dim">
           <template v-if="isInstalling">
             {{ server.install?.step }} · {{ Math.round(server.install?.progress ?? 0) }} %
           </template>
@@ -108,7 +107,7 @@ function tone(s: MinecraftServer) {
               {{ gb(server.ramUsedMb) }}/{{ gb(server.memoryLimitMb) }} Go
             </span>
           </template>
-          <template v-else> {{ gb(server.memoryMb) }} Go alloués </template>
+          <template v-else>{{ gb(server.memoryMb) }} Go alloués</template>
         </div>
       </div>
     </div>

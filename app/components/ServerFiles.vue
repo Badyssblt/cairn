@@ -20,6 +20,17 @@ const editing = ref<{ path: string; content: string; original: string } | null>(
 const saving = ref(false)
 const notice = ref<{ text: string; ok: boolean } | null>(null)
 
+/**
+ * Configs de plugins/mods (YAML, TOML, JSON) : un formulaire généré depuis
+ * les clés du fichier plutôt que le texte brut. Pas de schéma connu d'avance
+ * (contrairement à server.properties), donc pas de libellés — juste des
+ * champs typés. `structured` reste `null` pour les fichiers sans format
+ * reconnu, ou dont le contenu ne s'est pas laissé analyser.
+ */
+const structured = ref<ReturnType<typeof parseStructuredConfig> | null>(null)
+const structuredDraft = ref<unknown>(null)
+const viewMode = ref<'form' | 'text'>('text')
+
 /** Fil d'Ariane : chaque segment est cliquable pour remonter d'un niveau. */
 const crumbs = computed(() => {
   const parts = path.value.split('/').filter(Boolean)
@@ -35,12 +46,19 @@ async function open(next: string) {
     })
     entries.value = res.entries ?? []
     path.value = next
-    editing.value = null
+    closeEditor()
   } catch (e: any) {
     error.value = e?.data?.statusMessage ?? "Ce dossier n'a pas pu être lu."
   } finally {
     loading.value = false
   }
+}
+
+function closeEditor() {
+  editing.value = null
+  structured.value = null
+  structuredDraft.value = null
+  viewMode.value = 'text'
 }
 
 async function openFile(entry: FileEntry) {
@@ -56,6 +74,7 @@ async function openFile(entry: FileEntry) {
       query: { path: entry.path, read: 'true' },
     })
     editing.value = { path: entry.path, content: res.content!, original: res.content! }
+    openStructured(entry.path, res.content!)
   } catch (e: any) {
     error.value = e?.data?.statusMessage ?? "Ce fichier n'a pas pu être ouvert."
   } finally {
@@ -63,20 +82,76 @@ async function openFile(entry: FileEntry) {
   }
 }
 
-const dirty = computed(
-  () => editing.value !== null && editing.value.content !== editing.value.original,
-)
+/** Tente le formulaire pour ce fichier ; repli silencieux sur le texte brut. */
+function openStructured(path: string, content: string) {
+  structured.value = null
+  const format = detectStructuredFormat(path)
+  if (!format) {
+    viewMode.value = 'text'
+    return
+  }
+  try {
+    structured.value = parseStructuredConfig(format, content)
+    structuredDraft.value = structured.value.draft
+    viewMode.value = 'form'
+  } catch {
+    viewMode.value = 'text'
+    notice.value = { text: `${format.toUpperCase()} illisible : ouvert en texte.`, ok: false }
+  }
+}
+
+/**
+ * Passer du formulaire au texte fige les modifications en cours dans le
+ * texte affiché ; l'inverse relit ce texte, au cas où il aurait été retouché
+ * à la main entretemps.
+ */
+function setViewMode(mode: 'form' | 'text') {
+  if (!editing.value) return
+  if (mode === 'text' && viewMode.value === 'form' && structured.value) {
+    editing.value.content = structured.value.serialize(structuredDraft.value)
+  }
+  if (mode === 'form') {
+    const format = detectStructuredFormat(editing.value.path)
+    if (format) {
+      try {
+        structured.value = parseStructuredConfig(format, editing.value.content)
+        structuredDraft.value = structured.value.draft
+      } catch {
+        notice.value = { text: 'Texte non analysable : corrige-le avant de repasser au formulaire.', ok: false }
+        return
+      }
+    }
+  }
+  viewMode.value = mode
+}
+
+const dirty = computed(() => {
+  if (!editing.value) return false
+  if (viewMode.value === 'form' && structured.value) {
+    return JSON.stringify(structuredDraft.value) !== JSON.stringify(structured.value.draft)
+  }
+  return editing.value.content !== editing.value.original
+})
 
 async function save() {
   if (!editing.value || !dirty.value) return
   saving.value = true
   notice.value = null
   try {
+    const content =
+      viewMode.value === 'form' && structured.value
+        ? structured.value.serialize(structuredDraft.value)
+        : editing.value.content
+
     await $fetch(`/api/servers/${props.serverId}/files`, {
       method: 'PUT',
-      body: { path: editing.value.path, content: editing.value.content },
+      body: { path: editing.value.path, content },
     })
-    editing.value.original = editing.value.content
+    editing.value.content = content
+    editing.value.original = content
+    // Repart du texte tel qu'enregistré : le formulaire et le texte restent
+    // d'accord sur ce qui est réellement sur disque.
+    openStructured(editing.value.path, content)
     notice.value = {
       text: 'Enregistré. Redémarre le serveur pour appliquer les changements.',
       ok: true,
@@ -214,14 +289,37 @@ onMounted(() => open(''))
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-vein px-3 py-2">
         <span class="truncate font-mono text-[12px] text-chalk">{{ editing.path }}</span>
         <div class="flex items-center gap-2">
+          <div v-if="structured" class="flex overflow-hidden rounded-block border border-vein">
+            <button
+              type="button"
+              class="px-2.5 py-1 text-[11px]"
+              :class="viewMode === 'form' ? 'bg-torch-dim/20 text-torch' : 'text-ash-dim hover:text-chalk'"
+              @click="setViewMode('form')"
+            >
+              Formulaire
+            </button>
+            <button
+              type="button"
+              class="border-l border-vein px-2.5 py-1 text-[11px]"
+              :class="viewMode === 'text' ? 'bg-torch-dim/20 text-torch' : 'text-ash-dim hover:text-chalk'"
+              @click="setViewMode('text')"
+            >
+              Texte
+            </button>
+          </div>
           <span v-if="dirty" class="font-mono text-[11px] text-torch">non enregistré</span>
-          <UiBtn size="sm" variant="ghost" @click="editing = null">Fermer</UiBtn>
+          <UiBtn size="sm" variant="ghost" @click="closeEditor">Fermer</UiBtn>
           <UiBtn size="sm" variant="primary" :disabled="!dirty || saving" @click="save">
             {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
           </UiBtn>
         </div>
       </div>
+
+      <div v-if="viewMode === 'form' && structured" class="max-h-[30rem] overflow-y-auto p-3">
+        <StructuredValue v-model="structuredDraft" />
+      </div>
       <textarea
+        v-else
         v-model="editing.content"
         spellcheck="false"
         aria-label="Contenu du fichier"

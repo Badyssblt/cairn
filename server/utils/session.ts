@@ -33,11 +33,24 @@ export function useAuthSession(event: H3Event) {
   })
 }
 
-/** Renvoie l'utilisateur courant, ou null. Ne lève pas. */
+/**
+ * Renvoie l'utilisateur courant, ou null. Ne lève pas.
+ *
+ * Revérifie l'existence en base à chaque appel : le cookie de session est
+ * signé mais ne sait pas qu'un compte a été supprimé depuis. Sans ce
+ * contrôle, un admin retiré garderait un accès valide jusqu'à expiration du
+ * cookie — exactement ce que la suppression est censée empêcher.
+ */
 export async function currentUser(event: H3Event) {
   const session = await useAuthSession(event)
   if (!session.data.userId) return null
-  return { id: session.data.userId, username: session.data.username! }
+
+  const row = useDb()
+    .prepare('SELECT id, username FROM users WHERE id = ?')
+    .get(session.data.userId) as { id: number; username: string } | undefined
+  if (!row) return null
+
+  return { id: row.id, username: row.username }
 }
 
 /** Exige une session. Lève 401 sinon. */
@@ -79,7 +92,13 @@ export async function userFromRequest(request: Request | undefined) {
       name: 'mm_session',
     })
     if (!session.data.userId) return null
-    return { id: session.data.userId, username: session.data.username! }
+
+    const row = useDb()
+      .prepare('SELECT id, username FROM users WHERE id = ?')
+      .get(session.data.userId) as { id: number; username: string } | undefined
+    if (!row) return null
+
+    return { id: row.id, username: row.username }
   } catch {
     return null
   }

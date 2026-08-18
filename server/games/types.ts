@@ -5,7 +5,7 @@ import type { ServerRow } from '../utils/servers'
  *
  * Tout ce qui distingue un jeu d'un autre tient ici : son image, ses variables
  * d'environnement, ses ports, son dialecte de console, son fichier de config.
- * Le reste du panneau — rack, jauges, fichiers, sauvegardes — ne connaît que
+ * Le reste du panneau — tableau de bord, jauges, fichiers, sauvegardes — ne connaît que
  * cette interface et n'a rien de spécifique à un jeu.
  *
  * Minecraft est le seul à déclarer des sources de contenu (CurseForge,

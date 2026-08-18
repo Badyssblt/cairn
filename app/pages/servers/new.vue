@@ -177,10 +177,13 @@ const summary = computed(() => {
   return `${t?.label} · ${v}`
 })
 
+const { push: toast } = useToast()
+
 async function submit() {
   if (!canSubmit.value) return
   creating.value = true
   error.value = null
+  toast(`Création de « ${name.value.trim()} » en cours…`)
   try {
     const res = await $fetch('/api/servers', {
       method: 'POST',
@@ -212,8 +215,8 @@ async function submit() {
 
 <template>
   <div class="pb-28">
-    <main class="mx-auto max-w-3xl px-5 py-8">
-      <NuxtLink to="/" class="eyebrow hover:text-ash">← Le rack</NuxtLink>
+    <main class="px-5 py-8">
+      <NuxtLink to="/" class="eyebrow hover:text-ash">← Docker</NuxtLink>
       <h1 class="title-display mt-1 text-2xl text-chalk">Créer un serveur</h1>
 
       <form class="mt-8 space-y-9" @submit.prevent="submit">
@@ -429,7 +432,7 @@ async function submit() {
             Plus il y a de mods et de joueurs, plus il en faut.
             <template v-if="freeGb !== null">
               Il te reste
-              <span class="text-chalk">{{ freeGb.toFixed(1).replace('.', ',') }} Go</span>
+              <span class="text-chalk">{{ formatNumberFr(freeGb) }} Go</span>
               disponibles.
             </template>
           </p>
@@ -491,7 +494,7 @@ async function submit() {
               label="Disque (Go)"
               type="number"
               mono
-              hint="Seuil d'alerte, pas une barrière : Docker ne peut pas limiter un dossier monté."
+              hint="Seuil d'alerte, pas une barrière."
             />
           </div>
         </section>
@@ -539,8 +542,8 @@ async function submit() {
     </main>
 
     <!-- Récapitulatif : ce qu'on s'apprête à créer reste sous les yeux -->
-    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-vein bg-deepslate/95 backdrop-blur">
-      <div class="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
+    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-vein bg-deepslate/95 backdrop-blur lg:left-[228px]">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 lg:px-8">
         <div class="min-w-0 flex-1">
           <p class="truncate text-[13px] text-chalk">
             {{ name.trim() || 'Serveur sans nom' }}

@@ -21,7 +21,7 @@ const free = computed(() => Math.max(0, usable.value - allocated.value))
 const overCommitted = computed(() => allocated.value > usable.value)
 
 const pct = (mb: number) => `${(mb / props.totalMb) * 100}%`
-const gb = (mb: number) => (mb / 1024).toFixed(1).replace('.', ',')
+const gb = formatGb
 
 const runningCount = computed(() => props.segments.filter((s) => s.running).length)
 </script>

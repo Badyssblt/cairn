@@ -295,7 +295,7 @@ async function save() {
           class="rounded-slab border border-redstone-dim bg-redstone-dim/15 px-4 py-3 text-[13px] text-redstone"
         >
           <span class="block text-chalk">{{ w.label }} — à lire avant d'enregistrer</span>
-          <span class="mt-1 block text-ash">{{ w.message }}</span>
+          <span class="mt-1 block text-chalk">{{ w.message }}</span>
         </p>
 
         <section
@@ -378,7 +378,7 @@ async function save() {
           :class="draft[p.key] !== p.value ? 'bg-torch-dim/10' : ''"
         >
           <label :for="`prop-${p.key}`" class="min-w-0">
-            <span class="block truncate font-mono text-[12px] text-ash">
+            <span class="block truncate font-mono text-[12px] text-chalk">
               {{ p.key }}
               <span v-if="p.overridden" class="text-torch" title="Valeur personnalisée">•</span>
             </span>

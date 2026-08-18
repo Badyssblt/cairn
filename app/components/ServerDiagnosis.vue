@@ -136,7 +136,9 @@ async function disableMod(action: NonNullable<Diagnosis['action']>) {
                   ? 'Changer de version'
                   : d.section === 'config'
                     ? 'Ouvrir la configuration'
-                    : 'Ouvrir la console'
+                    : d.section === 'maintenance'
+                      ? "Ouvrir l'entretien"
+                      : 'Ouvrir la console'
           }}
         </UiBtn>
 

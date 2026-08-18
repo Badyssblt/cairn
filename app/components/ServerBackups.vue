@@ -76,11 +76,7 @@ async function remove(b: Backup) {
 }
 
 const size = (n: number | null) =>
-  n === null
-    ? '—'
-    : n >= 1073741824
-      ? `${(n / 1073741824).toFixed(1).replace('.', ',')} Go`
-      : `${Math.round(n / 1048576)} Mo`
+  n === null ? '—' : n >= 1073741824 ? formatBytesGb(n) : `${Math.round(n / 1048576)} Mo`
 
 // Une sauvegarde en cours se termine sans nous : on relit tant qu'il y en a.
 onMounted(() => {

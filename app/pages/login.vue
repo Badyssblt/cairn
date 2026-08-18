@@ -56,7 +56,7 @@ async function submit() {
         {{
           isSetup
             ? 'Ce compte est le seul à pouvoir piloter tes serveurs. Il ne sera plus possible d’en créer un autre depuis cet écran.'
-            : 'Identifie-toi pour accéder au rack.'
+            : 'Identifie-toi pour accéder à Docker.'
         }}
       </p>
 

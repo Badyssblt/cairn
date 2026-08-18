@@ -91,17 +91,15 @@ async function adopt() {
 <template>
   <div>
     <header class="border-b border-vein px-5 py-5 lg:px-8">
-      <div class="mx-auto max-w-3xl">
-        <NuxtLink to="/" class="eyebrow hover:text-ash">← Serveurs</NuxtLink>
-        <h1 class="title-display mt-1 text-2xl text-chalk">Importer un serveur</h1>
-        <p class="mt-1.5 text-[13px] text-ash">
-          Reprends un serveur déjà présent sur cette machine. Son dossier reste
-          où il est : rien n'est déplacé ni copié.
-        </p>
-      </div>
+      <NuxtLink to="/" class="eyebrow hover:text-ash">← Serveurs</NuxtLink>
+      <h1 class="title-display mt-1 text-2xl text-chalk">Importer un serveur</h1>
+      <p class="mt-1.5 text-[13px] text-ash">
+        Reprends un serveur déjà présent sur cette machine. Son dossier reste
+        où il est : rien n'est déplacé ni copié.
+      </p>
     </header>
 
-    <main class="mx-auto max-w-3xl px-5 py-6 lg:px-8">
+    <main class="px-5 py-6 lg:px-8">
       <!-- 1 · Où chercher -->
       <section>
         <h2 class="eyebrow">Où sont tes serveurs ?</h2>

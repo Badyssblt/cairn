@@ -110,7 +110,7 @@ const enoughData = computed(() => points.value.length >= 2)
 </script>
 
 <template>
-  <section class="rounded-slab border border-vein bg-stone/30 p-4">
+  <section class="max-w-3xl rounded-slab border border-vein bg-stone/30 p-4">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
       <h3 class="eyebrow">Fréquentation</h3>
       <div class="flex gap-1">
@@ -165,7 +165,7 @@ const enoughData = computed(() => points.value.length >= 2)
             :x2="W - PAD.right"
             :y1="t.y"
             :y2="t.y"
-            stroke="#2C313D"
+            class="stroke-vein"
             stroke-width="1"
           />
           <text
@@ -174,7 +174,7 @@ const enoughData = computed(() => points.value.length >= 2)
             :x="PAD.left - 6"
             :y="t.y + 3"
             text-anchor="end"
-            fill="#5D636F"
+            class="fill-ash-dim"
             font-size="9"
             font-family="IBM Plex Mono, monospace"
           >
@@ -184,8 +184,8 @@ const enoughData = computed(() => points.value.length >= 2)
 
         <defs>
           <linearGradient id="playersFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#C97B2E" stop-opacity="0.35" />
-            <stop offset="100%" stop-color="#C97B2E" stop-opacity="0.02" />
+            <stop offset="0%" style="stop-color: var(--color-torch)" stop-opacity="0.35" />
+            <stop offset="100%" style="stop-color: var(--color-torch)" stop-opacity="0.02" />
           </linearGradient>
         </defs>
 
@@ -193,7 +193,7 @@ const enoughData = computed(() => points.value.length >= 2)
         <path
           :d="linePath"
           fill="none"
-          stroke="#C97B2E"
+          class="stroke-torch"
           stroke-width="2"
           stroke-linejoin="round"
           stroke-linecap="round"
@@ -206,13 +206,13 @@ const enoughData = computed(() => points.value.length >= 2)
             :x2="hover.x"
             :y1="PAD.top"
             :y2="H - PAD.bottom"
-            stroke="#8A909E"
+            class="stroke-ash"
             stroke-width="1"
             stroke-dasharray="3 3"
           />
           <!-- Anneau de surface : le point reste lisible sur la courbe -->
-          <circle :cx="hover.x" :cy="hover.y" r="5" fill="#14161C" />
-          <circle :cx="hover.x" :cy="hover.y" r="3.5" fill="#C97B2E" />
+          <circle :cx="hover.x" :cy="hover.y" r="5" class="fill-deepslate" />
+          <circle :cx="hover.x" :cy="hover.y" r="3.5" class="fill-torch" />
         </g>
 
         <text
@@ -221,7 +221,7 @@ const enoughData = computed(() => points.value.length >= 2)
           :x="t.x"
           :y="H - 6"
           text-anchor="middle"
-          fill="#5D636F"
+          class="fill-ash-dim"
           font-size="9"
           font-family="IBM Plex Mono, monospace"
         >

@@ -1,3 +1,5 @@
+import { readdir, rm } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 import type { MinecraftServer, Sample, ServerType } from '#shared/types'
 
 export interface ServerRow {
@@ -124,6 +126,25 @@ export function insertSample(serverId: string, s: Sample) {
     )
 }
 
+/**
+ * Vide le dossier de données d'un serveur (monde, mods/plugins, config),
+ * sans supprimer le dossier lui-même : c'est le préalable à un changement de
+ * type, qui repart d'une installation neuve au même endroit.
+ *
+ * Même garde-fou que la suppression avec purge : on ne touche jamais un
+ * chemin hors de la racine des données, quoi qu'il y ait en base.
+ */
+export async function wipeServerData(dataDir: string): Promise<void> {
+  const root = resolve(useRuntimeConfig().dataRoot)
+  const dir = resolve(dataDir)
+  if (dir === root || !dir.startsWith(root + '/')) {
+    throw createError({ statusCode: 500, statusMessage: 'Dossier de données invalide.' })
+  }
+
+  const entries = await readdir(dir).catch(() => [])
+  await Promise.all(entries.map((e) => rm(join(dir, e), { recursive: true, force: true })))
+}
+
 /** Rétention 24 h : au-delà, le ribbon ne montre plus rien de ces données. */
 export function purgeOldSamples(maxAgeMs = 24 * 60 * 60 * 1000) {
   useDb()
@@ -136,7 +157,7 @@ export function purgeOldSamples(maxAgeMs = 24 * 60 * 60 * 1000) {
 /**
  * Assemble la vue envoyée à l'interface : la ligne en base, l'état réel du
  * conteneur et le dernier échantillon. L'état vient toujours de Docker, jamais
- * de la base — sinon un conteneur arrêté à la main mentirait dans le rack.
+ * de la base — sinon un conteneur arrêté à la main mentirait dans Docker.
  */
 export async function toMinecraftServer(row: ServerRow): Promise<MinecraftServer> {
   // Pendant l'installation, aucun conteneur n'existe encore : l'interroger

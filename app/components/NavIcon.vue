@@ -15,6 +15,10 @@ defineProps<{
     | 'logout'
     | 'copy'
     | 'plus'
+    | 'sun'
+    | 'moon'
+    | 'system'
+    | 'bell'
 }>()
 </script>
 
@@ -28,7 +32,7 @@ defineProps<{
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <!-- Le rack : des unités empilées -->
+    <!-- Conteneurs empilés -->
     <template v-if="name === 'servers'">
       <rect x="3" y="4" width="18" height="6" rx="1.5" />
       <rect x="3" y="14" width="18" height="6" rx="1.5" />
@@ -76,6 +80,31 @@ defineProps<{
     <template v-else-if="name === 'copy'">
       <rect x="9" y="9" width="12" height="12" rx="2" />
       <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </template>
+
+    <!-- Thème clair : le soleil -->
+    <template v-else-if="name === 'sun'">
+      <circle cx="12" cy="12" r="4" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"
+      />
+    </template>
+
+    <!-- Thème sombre : la lune -->
+    <template v-else-if="name === 'moon'">
+      <path d="M20 14.2A8.5 8.5 0 1 1 9.8 4a6.8 6.8 0 0 0 10.2 10.2z" />
+    </template>
+
+    <!-- Thème système : l'écran -->
+    <template v-else-if="name === 'system'">
+      <rect x="2.5" y="4.5" width="19" height="13" rx="1.5" />
+      <path d="M8.5 20.5h7M12 17.5v3" />
+    </template>
+
+    <!-- Notifications : la cloche -->
+    <template v-else-if="name === 'bell'">
+      <path d="M6 9.5a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 15 6 13.5 6 9.5z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
     </template>
 
     <template v-else>

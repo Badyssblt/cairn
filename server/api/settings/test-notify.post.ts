@@ -6,6 +6,6 @@ export default defineEventHandler(async () => {
       statusMessage: "Aucun webhook Discord n'est enregistré.",
     })
   }
-  await notify('good', 'Cairn est branché', 'Les alertes de tes serveurs arriveront ici.')
+  await recordEvent('good', 'Cairn est branché', 'Les alertes de tes serveurs arriveront ici.')
   return { ok: true }
 })

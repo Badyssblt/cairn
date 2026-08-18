@@ -158,7 +158,7 @@ const actionLabel = (a: string) => ACTIONS.find((x) => x.value === a)?.label ?? 
     <section class="mt-4 rounded-slab border border-vein bg-stone/30 p-4">
       <h3 class="eyebrow">Nouvelle tâche</h3>
 
-      <div class="mt-3 grid gap-4 sm:grid-cols-2">
+      <div class="mt-3 grid max-w-xl gap-4 sm:grid-cols-2">
         <UiField v-model="form.name" label="Nom" placeholder="Sauvegarde nocturne" />
 
         <div>
@@ -236,10 +236,7 @@ const actionLabel = (a: string) => ACTIONS.find((x) => x.value === a)?.label ?? 
             lieu à l'heure indiquée, pas après.
           </p>
         </div>
-        <p v-else class="text-[12px] text-ash-dim">
-          Ce jeu n'a pas de canal d'annonce : la coupure ne peut pas être
-          signalée aux joueurs connectés.
-        </p>
+        <p v-else class="text-[12px] text-ash-dim">Ce jeu n'a pas de canal d'annonce.</p>
 
         <label class="flex items-start gap-2.5">
           <input

@@ -46,8 +46,25 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'fr' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'color-scheme', content: 'dark' },
-        { name: 'theme-color', content: '#14161C' },
+        { name: 'color-scheme', content: 'light dark' },
+        // Valeur de repli avant hydratation ; `useTheme` la met à jour selon
+        // le thème réellement actif une fois monté.
+        { name: 'theme-color', content: '#0A0B0F' },
+      ],
+      script: [
+        {
+          // Bloquant et exécuté avant le premier paint : sans lui, un
+          // visiteur en thème clair verrait une image sombre le temps que
+          // Vue s'hydrate.
+          innerHTML: `(function () {
+            try {
+              var stored = localStorage.getItem('cairn-theme')
+              if (stored === 'light' || stored === 'dark') {
+                document.documentElement.dataset.theme = stored
+              }
+            } catch (e) {}
+          })()`,
+        },
       ],
     },
   },

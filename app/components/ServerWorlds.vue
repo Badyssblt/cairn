@@ -30,8 +30,7 @@ const { data: packs, refresh: refreshPacks } = await useFetch<{
 const busy = ref(false)
 const message = ref<{ text: string; ok: boolean } | null>(null)
 
-const size = (mb: number) =>
-  mb >= 1024 ? `${(mb / 1024).toFixed(1).replace('.', ',')} Go` : `${Math.round(mb)} Mo`
+const size = formatMb
 
 async function run(fn: () => Promise<string>) {
   busy.value = true
@@ -149,7 +148,7 @@ function saveResourcePack() {
     <section class="rounded-slab border border-vein bg-stone/30 p-4">
       <div class="flex flex-wrap items-baseline justify-between gap-3">
         <h3 class="eyebrow">Mondes sur ce serveur</h3>
-        <span v-if="data?.seed" class="font-mono text-[11px] text-ash">
+        <span v-if="data?.seed" class="font-mono text-[11px] text-chalk">
           graine : {{ data.seed }}
         </span>
         <span v-else-if="data && !data.running" class="text-[11px] text-ash-dim">

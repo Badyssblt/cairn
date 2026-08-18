@@ -14,6 +14,7 @@ const route = useRoute()
 
 const nav = [
   { to: '/', label: 'Serveurs', icon: 'servers' as const },
+  { to: '/accounts', label: 'Comptes', icon: 'players' as const },
   { to: '/settings', label: 'Réglages', icon: 'settings' as const },
 ]
 
@@ -42,6 +43,7 @@ watch(() => route.fullPath, () => (drawerOpen.value = false))
         </svg>
       </button>
       <span class="title-display text-[13px] tracking-wide text-chalk">Cairn</span>
+      <NotificationBell class="ml-auto" />
     </header>
 
     <div class="lg:flex">
@@ -53,18 +55,21 @@ watch(() => route.fullPath, () => (drawerOpen.value = false))
       />
 
       <aside
-        class="fixed inset-y-0 left-0 z-50 flex w-[228px] shrink-0 flex-col border-r border-vein bg-stone/40 transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-[228px] shrink-0 flex-col border-r border-vein-lit bg-stone transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
         :class="drawerOpen ? 'translate-x-0' : '-translate-x-full'"
       >
-        <NuxtLink to="/" class="flex h-14 shrink-0 items-center gap-2.5 border-b border-vein px-4">
-          <span class="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px]">
-            <span class="rounded-[1px] bg-torch" />
-            <span class="rounded-[1px] bg-vein-lit" />
-            <span class="rounded-[1px] bg-vein-lit" />
-            <span class="rounded-[1px] bg-torch-dim" />
-          </span>
-          <span class="title-display text-[13px] tracking-wide text-chalk">Cairn</span>
-        </NuxtLink>
+        <div class="flex h-14 shrink-0 items-center gap-2.5 border-b border-vein px-4">
+          <NuxtLink to="/" class="flex min-w-0 flex-1 items-center gap-2.5">
+            <span class="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px]">
+              <span class="rounded-[1px] bg-torch" />
+              <span class="rounded-[1px] bg-vein-lit" />
+              <span class="rounded-[1px] bg-vein-lit" />
+              <span class="rounded-[1px] bg-torch-dim" />
+            </span>
+            <span class="title-display text-[13px] tracking-wide text-chalk">Cairn</span>
+          </NuxtLink>
+          <NotificationBell />
+        </div>
 
         <nav class="flex-1 overflow-y-auto p-2.5">
           <NuxtLink
@@ -93,9 +98,12 @@ watch(() => route.fullPath, () => (drawerOpen.value = false))
 
         <!-- L'hôte administré, puis le compte : deux informations d'identité -->
         <div class="shrink-0 border-t border-vein p-2.5">
-          <p v-if="state.host" class="truncate px-1 pb-2 font-mono text-[11px] text-ash-dim">
-            {{ state.host }}
-          </p>
+          <div class="flex items-center justify-between px-1 pb-2.5">
+            <p v-if="state.host" class="truncate font-mono text-[11px] text-ash-dim">
+              {{ state.host }}
+            </p>
+            <ThemeToggle class="ml-auto" />
+          </div>
           <div class="flex items-center gap-2">
             <span
               class="grid h-7 w-7 shrink-0 place-items-center rounded-block bg-vein text-[11px] font-semibold uppercase text-chalk"

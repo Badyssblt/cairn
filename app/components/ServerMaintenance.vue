@@ -14,7 +14,7 @@ const { data: cleanup, refresh: refreshCleanup } = await useFetch<{
 
 const size = (n: number) =>
   n >= 1073741824
-    ? `${(n / 1073741824).toFixed(1).replace('.', ',')} Go`
+    ? formatBytesGb(n)
     : n >= 1048576
       ? `${Math.round(n / 1048576)} Mo`
       : `${Math.round(n / 1024)} Ko`
@@ -63,7 +63,7 @@ const overheadMb = computed(() =>
   isMinecraft.value ? Math.max(1024, Math.round(memoryMb.value * 0.25)) : 0,
 )
 
-const gb = (mb: number) => (mb / 1024).toFixed(1).replace('.', ',')
+const gb = formatGb
 
 async function saveResources() {
   busy.value = true
@@ -158,7 +158,7 @@ async function resetWorld() {
           :key="f.name"
           class="group flex items-center gap-3"
         >
-          <span class="w-40 shrink-0 truncate font-mono text-[12px] text-ash">{{ f.name }}</span>
+          <span class="w-40 shrink-0 truncate font-mono text-[12px] text-chalk">{{ f.name }}</span>
           <div class="h-1.5 flex-1 overflow-hidden rounded-[2px] bg-deepslate">
             <div
               class="h-full rounded-[1px]"
@@ -206,7 +206,7 @@ async function resetWorld() {
         <template v-if="isMinecraft">
           {{ gb(memoryMb) }} Go de tas + {{ gb(overheadMb) }} Go que la JVM consomme
           hors-tas (metaspace, threads, buffers réseau) =
-          <span class="text-ash">{{ gb(memoryMb + overheadMb) }} Go réservés</span>
+          <span class="text-chalk">{{ gb(memoryMb + overheadMb) }} Go réservés</span>
           au conteneur. C'est ce dernier chiffre qui compte dans la capacité de l'hôte.
         </template>
         <template v-else>
@@ -258,8 +258,7 @@ async function resetWorld() {
     <section class="rounded-slab border border-vein bg-stone/30 p-4">
       <h3 class="eyebrow">Dupliquer ce serveur</h3>
       <p class="mt-1.5 text-[13px] text-ash">
-        Pour éprouver une mise à jour sans risquer le serveur principal. La copie
-        n'est pas démarrée automatiquement.
+        Pour éprouver une mise à jour sans risquer le serveur principal.
       </p>
       <div class="mt-3 grid max-w-lg gap-4 sm:grid-cols-2">
         <UiField v-model="cloneName" label="Nom de la copie" placeholder="essai mise à jour" />
