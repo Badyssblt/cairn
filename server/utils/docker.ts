@@ -203,6 +203,13 @@ export async function createContainer(opts: CreateContainerOptions) {
     HostConfig: {
       Binds: [`${opts.dataDir}:/data`],
       PortBindings: opts.portBindings,
+      // Sans ça, le conteneur hérite du resolv.conf de l'hôte — IPv6 compris.
+      // Un résolveur IPv6 injoignable depuis le réseau du conteneur (VPN,
+      // routeur, systemd-resolved local) fait échouer toute résolution DNS
+      // externe, dont le téléchargement des modloaders (Fabric, Forge...) au
+      // premier démarrage. Deux résolveurs IPv4 publics, indépendants de la
+      // configuration réseau de l'hôte.
+      Dns: ['1.1.1.1', '9.9.9.9'],
       Memory: opts.memoryLimitMb * 1024 * 1024,
       // NanoCpus est un plafond dur : le conteneur ne dépassera pas cette
       // fraction de CPU, même si la machine est au repos. C'est ce qui évite
