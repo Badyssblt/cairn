@@ -25,11 +25,23 @@ function secret(): string {
   return devSecret
 }
 
+/**
+ * h3 pose `secure: true` par défaut sur le cookie de session, tout le temps —
+ * y compris quand le panneau tourne encore en HTTP nu, avant qu'un reverse
+ * proxy HTTPS ne soit en place. Un cookie `Secure` sur une origine HTTP n'est
+ * pas juste ignoré : le navigateur refuse de le garder, donc la session ne
+ * survit à aucune actualisation. `localhost` fait exception (contexte
+ * sécurisé même en HTTP), ce qui masque le problème en dev.
+ *
+ * `getRequestProtocol` lit `X-Forwarded-Proto` : derrière un reverse proxy
+ * qui termine le TLS, la connexion au panneau lui-même est en HTTP, mais la
+ * requête d'origine était bien en HTTPS.
+ */
 export function useAuthSession(event: H3Event) {
   return useSession<SessionData>(event, {
     password: secret(),
     name: 'mm_session',
-    cookie: { sameSite: 'lax', httpOnly: true, path: '/' },
+    cookie: { sameSite: 'lax', httpOnly: true, path: '/', secure: getRequestProtocol(event) === 'https' },
   })
 }
 
