@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Serveurs — Cairn' })
 
-const { servers, host, pending, error, act, busy } = useServers()
+const { servers, host, pending, error, act, busy, portConflict } = useServers()
 const { push: toast } = useToast()
 
 const running = computed(() => servers.value.filter((s) => s.state === 'running').length)
@@ -145,13 +145,21 @@ async function sendBroadcast() {
           </UiBtn>
         </div>
 
-        <p
+        <div
           v-if="error"
           role="alert"
-          class="mt-3 rounded-slab border border-redstone-dim bg-redstone-dim/20 px-5 py-3 text-[13px] text-redstone"
+          class="mt-3 flex flex-wrap items-center gap-2.5 rounded-slab border border-redstone-dim bg-redstone-dim/20 px-5 py-3 text-[13px] text-redstone"
         >
-          {{ error }}
-        </p>
+          <span>{{ error }}</span>
+          <UiBtn
+            v-if="portConflict"
+            size="sm"
+            variant="ghost"
+            @click="act(portConflict.serverId, 'start', true)"
+          >
+            Arrêter « {{ portConflict.conflictName }} » et démarrer
+          </UiBtn>
+        </div>
 
         <div v-if="filtered.length" class="mt-3 rounded-slab border border-vein bg-stone/30">
           <ServerRow

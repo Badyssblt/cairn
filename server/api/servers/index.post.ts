@@ -12,6 +12,8 @@ const Body = z.object({
   options: z.record(z.string(), z.string()).default({}),
   cpuLimit: z.number().min(0.1).max(64).optional().nullable(),
   diskLimitMb: z.number().int().min(256).optional().nullable(),
+  /** Arrête d'abord le(s) serveur(s) qui occupent déjà le port demandé. */
+  stopConflicting: z.boolean().optional().default(false),
 
   /* -- Minecraft uniquement ---------------------------------------------- */
   type: z.enum(['VANILLA', 'PAPER', 'FORGE', 'FABRIC', 'MODPACK']).optional(),
@@ -96,18 +98,29 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const owners = portOwners()
+  const owners = await portOwners()
+  const conflicts = new Map<string, string>() // id -> name
   for (const port of occupiedHostPorts(adapter, draftCtx, input.hostPort)) {
     const taken = owners.get(port)
-    if (taken) {
+    if (!taken) continue
+    if (!input.stopConflicting) {
       throw createError({
         statusCode: 409,
         statusMessage:
           port === input.hostPort
-            ? `Le port ${port} est déjà pris par « ${taken} ». Choisis un autre port.`
-            : `${adapter.name} a aussi besoin du port ${port}, déjà pris par « ${taken} ».`,
+            ? `Le port ${port} est déjà utilisé par « ${taken.name} », en marche. Choisis un autre port, ou arrête-le.`
+            : `${adapter.name} a aussi besoin du port ${port}, déjà utilisé par « ${taken.name} », en marche.`,
+        data: { conflictId: taken.id, conflictName: taken.name, port },
       })
     }
+    conflicts.set(taken.id, taken.name)
+  }
+  // On a choisi de couper l'autre serveur plutôt que de changer de port :
+  // on l'arrête avant de continuer, sinon Docker refuserait de publier le
+  // même port deux fois.
+  for (const conflictId of conflicts.keys()) {
+    closeRcon(conflictId)
+    await stopContainer(conflictId).catch(() => {})
   }
 
   // Refuse avant de créer quoi que ce soit : pas de dossier ni de conteneur

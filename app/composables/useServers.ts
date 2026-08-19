@@ -31,6 +31,10 @@ export function useServers() {
 
   const busy = ref(new Set<string>())
   const actionError = ref<string | null>(null)
+  /** Rempli quand un démarrage échoue à cause d'un port pris par un autre serveur en marche. */
+  const portConflict = ref<{ serverId: string; conflictId: string; conflictName: string } | null>(
+    null,
+  )
   const { push: toast } = useToast()
 
   const ACTION_LABEL: Record<'start' | 'stop' | 'restart', string> = {
@@ -39,18 +43,30 @@ export function useServers() {
     restart: 'Redémarrage',
   }
 
-  async function act(id: string, action: 'start' | 'stop' | 'restart') {
+  async function act(
+    id: string,
+    action: 'start' | 'stop' | 'restart',
+    stopConflicting = false,
+  ) {
     if (busy.value.has(id)) return
     busy.value = new Set(busy.value).add(id)
     actionError.value = null
+    portConflict.value = null
     const name = servers.value.find((s) => s.id === id)?.name ?? id
     toast(`${ACTION_LABEL[action]} de « ${name} »…`)
     try {
-      await $fetch(`/api/servers/${id}/${action}`, { method: 'POST' })
+      await $fetch(`/api/servers/${id}/${action}`, {
+        method: 'POST',
+        body: action === 'start' ? { stopConflicting } : undefined,
+      })
       await refresh()
     } catch (e: any) {
       actionError.value =
         e?.data?.statusMessage ?? e?.statusMessage ?? "L'action a échoué."
+      const conflictId = e?.data?.data?.conflictId
+      portConflict.value = conflictId
+        ? { serverId: id, conflictId, conflictName: e.data.data.conflictName }
+        : null
     } finally {
       const next = new Set(busy.value)
       next.delete(id)
@@ -80,5 +96,5 @@ export function useServers() {
     () => actionError.value ?? (error.value ? 'Docker n’a pas pu être lu.' : null),
   )
 
-  return { servers, host, pending, error: combinedError, refresh, act, busy }
+  return { servers, host, pending, error: combinedError, refresh, act, busy, portConflict }
 }

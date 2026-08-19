@@ -20,19 +20,32 @@ export function useServerDetail() {
 
   const busy = useState(`server-busy-${id.value}`, () => false)
   const actionError = useState<string | null>(`server-error-${id.value}`, () => null)
+  /** Rempli quand un démarrage échoue à cause d'un port pris par un autre serveur en marche. */
+  const portConflict = useState<{ conflictId: string; conflictName: string } | null>(
+    `server-port-conflict-${id.value}`,
+    () => null,
+  )
 
-  async function act(action: 'start' | 'stop' | 'restart') {
+  async function act(action: 'start' | 'stop' | 'restart', stopConflicting = false) {
     busy.value = true
     actionError.value = null
+    portConflict.value = null
     try {
-      await $fetch(`/api/servers/${id.value}/${action}`, { method: 'POST' })
+      await $fetch(`/api/servers/${id.value}/${action}`, {
+        method: 'POST',
+        body: action === 'start' ? { stopConflicting } : undefined,
+      })
       await refresh()
     } catch (e: any) {
       actionError.value = e?.data?.statusMessage ?? "L'action a échoué."
+      const conflictId = e?.data?.data?.conflictId
+      portConflict.value = conflictId
+        ? { conflictId, conflictName: e.data.data.conflictName }
+        : null
     } finally {
       busy.value = false
     }
   }
 
-  return { id, server, refresh, error, pending, busy, actionError, act }
+  return { id, server, refresh, error, pending, busy, actionError, portConflict, act }
 }

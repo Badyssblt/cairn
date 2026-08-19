@@ -38,13 +38,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const adapter = gameAdapter(source.game)
-  const owners = portOwners()
+  const owners = await portOwners()
   for (const port of occupiedHostPorts(adapter, gameContext(source), input.hostPort)) {
     const taken = owners.get(port)
     if (taken) {
       throw createError({
         statusCode: 409,
-        statusMessage: `Le port ${port} est déjà pris par « ${taken} ».`,
+        statusMessage: `Le port ${port} est déjà utilisé par « ${taken.name} », en marche.`,
+        data: { conflictId: taken.id, conflictName: taken.name, port },
       })
     }
   }

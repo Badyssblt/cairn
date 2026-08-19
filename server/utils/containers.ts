@@ -37,19 +37,32 @@ export async function recreateServerContainer(row: ServerRow) {
   return await createServerContainer(row)
 }
 
+export interface PortOwner {
+  id: string
+  name: string
+}
+
 /**
- * Qui occupe quel port sur l'hôte.
+ * Qui occupe réellement quel port sur l'hôte, parmi les serveurs EN MARCHE.
  *
- * La base ne stocke que le port principal, ce qui ne suffit plus : un serveur
+ * Un port n'est publié qu'au démarrage du conteneur : un serveur arrêté ne
+ * retient pas son port, deux serveurs peuvent très bien en partager un tant
+ * qu'un seul tourne à la fois. C'est pour ça qu'on interroge Docker plutôt
+ * que de se fier à la seule base.
+ *
+ * La base ne stocke que le port principal, ce qui ne suffit pas : un serveur
  * Valheim en occupe trois consécutifs. Sans cette vue complète, deux serveurs
  * pourraient se voir attribuer des plages qui se chevauchent, et la collision
  * n'apparaîtrait qu'au démarrage du second — avec un message Docker illisible.
  */
-export function portOwners(exceptId?: string): Map<number, string> {
-  const owners = new Map<number, string>()
+export async function portOwners(exceptId?: string): Promise<Map<number, PortOwner>> {
+  const owners = new Map<number, PortOwner>()
 
   for (const row of listServerRows()) {
     if (row.id === exceptId) continue
+    const status = await containerStatus(row.id)
+    if (status.state !== 'running' && status.state !== 'starting') continue
+
     let ports: number[]
     try {
       ports = occupiedHostPorts(gameAdapter(row.game), gameContext(row), row.host_port)
@@ -57,7 +70,7 @@ export function portOwners(exceptId?: string): Map<number, string> {
       // Jeu retiré du registre : on retient au moins son port principal.
       ports = [row.host_port]
     }
-    for (const p of ports) owners.set(p, row.name)
+    for (const p of ports) owners.set(p, { id: row.id, name: row.name })
   }
   return owners
 }

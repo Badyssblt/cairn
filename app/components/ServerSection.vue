@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** En-tête commun à toutes les sections d'un serveur. */
 defineProps<{ title: string; hint?: string }>()
-const { server, actionError, busy, act } = useServerDetail()
+const { server, actionError, portConflict, busy, act } = useServerDetail()
 </script>
 
 <template>
@@ -39,13 +39,22 @@ const { server, actionError, busy, act } = useServerDetail()
       </div>
     </div>
 
-    <p
+    <div
       v-if="actionError"
       role="alert"
-      class="mt-4 rounded-block border border-redstone-dim bg-redstone-dim/20 px-3 py-2 text-[12px] text-redstone"
+      class="mt-4 flex flex-wrap items-center gap-2.5 rounded-block border border-redstone-dim bg-redstone-dim/20 px-3 py-2 text-[12px] text-redstone"
     >
-      {{ actionError }}
-    </p>
+      <span>{{ actionError }}</span>
+      <UiBtn
+        v-if="portConflict"
+        size="sm"
+        variant="ghost"
+        :disabled="busy"
+        @click="act('start', true)"
+      >
+        Arrêter « {{ portConflict.conflictName }} » et démarrer
+      </UiBtn>
+    </div>
     <p
       v-if="server?.installError"
       role="alert"

@@ -54,11 +54,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const taken = portOwners().get(input.hostPort)
+  const taken = (await portOwners()).get(input.hostPort)
   if (taken) {
     throw createError({
       statusCode: 409,
-      statusMessage: `Le port ${input.hostPort} est déjà pris par « ${taken} ».`,
+      statusMessage: `Le port ${input.hostPort} est déjà utilisé par « ${taken.name} », en marche.`,
+      data: { conflictId: taken.id, conflictName: taken.name, port: input.hostPort },
     })
   }
 

@@ -179,10 +179,14 @@ const summary = computed(() => {
 
 const { push: toast } = useToast()
 
-async function submit() {
+/** Rempli quand la création échoue à cause d'un port déjà en marche ailleurs. */
+const portConflict = ref<{ id: string; name: string } | null>(null)
+
+async function submit(stopConflicting = false) {
   if (!canSubmit.value) return
   creating.value = true
   error.value = null
+  portConflict.value = null
   toast(`Création de « ${name.value.trim()} » en cours…`)
   try {
     const res = await $fetch('/api/servers', {
@@ -203,11 +207,16 @@ async function submit() {
         modpackIcon: modpack.value?.iconUrl ?? null,
         cpuLimit: cpuLimit.value > 0 ? cpuLimit.value : null,
         diskLimitMb: diskLimitGb.value > 0 ? Math.round(diskLimitGb.value * 1024) : null,
+        stopConflicting,
       },
     })
     await navigateTo(`/servers/${res.server.id}`)
   } catch (e: any) {
     error.value = e?.data?.statusMessage ?? "Le serveur n'a pas pu être créé."
+    const conflictId = e?.data?.data?.conflictId
+    portConflict.value = conflictId
+      ? { id: conflictId, name: e.data.data.conflictName }
+      : null
     creating.value = false
   }
 }
@@ -219,7 +228,7 @@ async function submit() {
       <NuxtLink to="/" class="eyebrow hover:text-ash">← Docker</NuxtLink>
       <h1 class="title-display mt-1 text-2xl text-chalk">Créer un serveur</h1>
 
-      <form class="mt-8 space-y-9" @submit.prevent="submit">
+      <form class="mt-8 space-y-9" @submit.prevent="submit()">
         <!-- 1 · Le jeu : c'est lui qui détermine tout le formulaire -->
         <section>
           <h2 class="eyebrow">Quel jeu ?</h2>
@@ -531,13 +540,23 @@ async function submit() {
           la console affichera le journal, sans zone de saisie.
         </p>
 
-        <p
+        <div
           v-if="error"
           role="alert"
-          class="rounded-block border border-redstone-dim bg-redstone-dim/20 px-3 py-2 text-[13px] text-redstone"
+          class="flex flex-wrap items-center gap-2.5 rounded-block border border-redstone-dim bg-redstone-dim/20 px-3 py-2 text-[13px] text-redstone"
         >
-          {{ error }}
-        </p>
+          <span>{{ error }}</span>
+          <UiBtn
+            v-if="portConflict"
+            type="button"
+            size="sm"
+            variant="ghost"
+            :disabled="creating"
+            @click="submit(true)"
+          >
+            Arrêter « {{ portConflict.name }} » et créer ici
+          </UiBtn>
+        </div>
       </form>
     </main>
 
@@ -553,7 +572,7 @@ async function submit() {
           </p>
         </div>
 
-        <UiBtn variant="primary" :disabled="!canSubmit" @click="submit">
+        <UiBtn variant="primary" :disabled="!canSubmit" @click="submit()">
           {{ creating ? 'Création…' : 'Créer le serveur' }}
         </UiBtn>
       </div>
