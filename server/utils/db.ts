@@ -196,6 +196,57 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX idx_events_created ON events(created_at DESC);
   `,
+
+  // 14 — Un port ne se publie qu'au démarrage du conteneur : un serveur
+  //      arrêté ne doit plus le retenir pour toujours. La colonne était
+  //      UNIQUE, ce que SQLite ne sait pas revenir en arrière sans recréer la
+  //      table. `foreign_keys` est désactivé pendant les migrations (voir
+  //      useDb ci-dessous) : sans ça, ce DROP TABLE viderait en cascade
+  //      samples, backups, schedules et events.
+  `
+  CREATE TABLE servers_new (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL UNIQUE,
+    type          TEXT NOT NULL,
+    mc_version    TEXT NOT NULL,
+    modpack_name  TEXT,
+    host_port     INTEGER NOT NULL,
+    memory_mb     INTEGER NOT NULL,
+    rcon_password TEXT NOT NULL,
+    container_id  TEXT,
+    data_dir      TEXT NOT NULL,
+    created_at    INTEGER NOT NULL,
+    modpack_source  TEXT,
+    modpack_project TEXT,
+    modpack_version TEXT,
+    modpack_loader  TEXT,
+    install_state    TEXT,
+    install_step     TEXT,
+    install_progress INTEGER,
+    install_error    TEXT,
+    loader           TEXT,
+    loader_version   TEXT,
+    disk_used_mb   INTEGER,
+    disk_checked_at INTEGER,
+    icon_url TEXT,
+    game    TEXT NOT NULL DEFAULT 'minecraft',
+    options TEXT,
+    cpu_limit     REAL,
+    disk_limit_mb INTEGER
+  );
+
+  INSERT INTO servers_new SELECT
+    id, name, type, mc_version, modpack_name, host_port, memory_mb,
+    rcon_password, container_id, data_dir, created_at,
+    modpack_source, modpack_project, modpack_version, modpack_loader,
+    install_state, install_step, install_progress, install_error,
+    loader, loader_version, disk_used_mb, disk_checked_at, icon_url,
+    game, options, cpu_limit, disk_limit_mb
+  FROM servers;
+
+  DROP TABLE servers;
+  ALTER TABLE servers_new RENAME TO servers;
+  `,
 ]
 
 let instance: Database.Database | null = null
@@ -208,9 +259,15 @@ export function useDb(): Database.Database {
 
   const db = new Database(path)
   db.pragma('journal_mode = WAL')
+
+  // Désactivées pendant la migration, pas seulement laissées à leur défaut :
+  // better-sqlite3 les active d'emblée sur une nouvelle connexion. Sans ce
+  // OFF explicite, la migration 14 (qui recrée `servers` via DROP + RENAME)
+  // viderait en cascade samples/backups/schedules/events.
+  db.pragma('foreign_keys = OFF')
+  migrate(db)
   db.pragma('foreign_keys = ON')
 
-  migrate(db)
   instance = db
   return db
 }
