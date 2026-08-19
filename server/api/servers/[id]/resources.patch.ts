@@ -3,14 +3,17 @@ import { z } from 'zod'
 const Body = z.object({
   memoryMb: z.number().int().min(512).max(64 * 1024).optional(),
   aikarFlags: z.boolean().optional(),
+  hostPort: z.number().int().min(1024).max(65535).optional(),
+  /** Arrête d'abord le(s) serveur(s) qui occupent déjà le port demandé. */
+  stopConflicting: z.boolean().optional().default(false),
 })
 
 /**
  * Change les ressources d'un serveur déjà créé.
  *
- * Mémoire et flags JVM sont figés dans le conteneur au moment de sa création :
- * les modifier impose de le refaire. C'est sans danger — le dossier de données
- * n'est pas touché, seul le conteneur est reconstruit à l'identique par
+ * Mémoire, flags JVM et port sont figés dans le conteneur au moment de sa
+ * création : les modifier impose de le refaire. C'est sans danger — le
+ * dossier de données n'est pas touché, seul le conteneur est reconstruit par
  * `recreateServerContainer()` — mais ça coupe le serveur, donc on l'exige
  * arrêté plutôt que de le tuer sous les pieds de ses joueurs.
  */
@@ -45,6 +48,29 @@ export default defineEventHandler(async (event) => {
     assertMemoryAvailable(row.game, input.memoryMb, row.id)
   }
 
+  if (input.hostPort !== undefined && input.hostPort !== row.host_port) {
+    const adapter = gameAdapter(row.game)
+    const draftCtx = { row: { ...row, host_port: input.hostPort }, options: serverOptions(row) }
+    const owners = await portOwners(row.id)
+    const conflicts = new Map<string, string>()
+    for (const port of occupiedHostPorts(adapter, draftCtx, input.hostPort)) {
+      const taken = owners.get(port)
+      if (!taken) continue
+      if (!input.stopConflicting) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: `Le port ${port} est déjà utilisé par « ${taken.name} », en marche.`,
+          data: { conflictId: taken.id, conflictName: taken.name, port },
+        })
+      }
+      conflicts.set(taken.id, taken.name)
+    }
+    for (const conflictId of conflicts.keys()) {
+      closeRcon(conflictId)
+      await stopContainer(conflictId)
+    }
+  }
+
   const options = serverOptions(row)
   if (input.aikarFlags !== undefined) {
     if (input.aikarFlags) options.aikarFlags = 'true'
@@ -52,8 +78,13 @@ export default defineEventHandler(async (event) => {
   }
 
   useDb()
-    .prepare('UPDATE servers SET memory_mb = ?, options = ? WHERE id = ?')
-    .run(input.memoryMb ?? row.memory_mb, JSON.stringify(options), row.id)
+    .prepare('UPDATE servers SET memory_mb = ?, options = ?, host_port = ? WHERE id = ?')
+    .run(
+      input.memoryMb ?? row.memory_mb,
+      JSON.stringify(options),
+      input.hostPort ?? row.host_port,
+      row.id,
+    )
 
   const updated = requireServerRow(row.id)
   if (status.exists) await recreateServerContainer(updated)
@@ -63,5 +94,6 @@ export default defineEventHandler(async (event) => {
     memoryMb: updated.memory_mb,
     memoryLimitMb: containerMemoryMb(updated.game, updated.memory_mb),
     aikarFlags: serverOptions(updated).aikarFlags === 'true',
+    hostPort: updated.host_port,
   }
 })

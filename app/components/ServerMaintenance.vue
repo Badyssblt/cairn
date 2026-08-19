@@ -44,9 +44,11 @@ const AIKAR_MIN_HEAP_MB = 4096
 
 const memoryMb = ref(props.server.memoryMb)
 const aikar = ref(Boolean(props.server.aikarFlags))
+const hostPort = ref(props.server.hostPort)
 watchEffect(() => {
   memoryMb.value = props.server.memoryMb
   aikar.value = Boolean(props.server.aikarFlags)
+  hostPort.value = props.server.hostPort
 })
 
 const isMinecraft = computed(() => props.server.game === 'minecraft')
@@ -55,8 +57,12 @@ const stopped = computed(() => props.server.state === 'stopped')
 const resourcesDirty = computed(
   () =>
     memoryMb.value !== props.server.memoryMb ||
-    aikar.value !== Boolean(props.server.aikarFlags),
+    aikar.value !== Boolean(props.server.aikarFlags) ||
+    hostPort.value !== props.server.hostPort,
 )
+
+/** Rempli quand le changement de port échoue à cause d'un autre serveur en marche. */
+const portConflict = ref<{ id: string; name: string } | null>(null)
 
 /** La marge hors-tas, telle que le conteneur la reçoit réellement. */
 const overheadMb = computed(() =>
@@ -65,14 +71,17 @@ const overheadMb = computed(() =>
 
 const gb = formatGb
 
-async function saveResources() {
+async function saveResources(stopConflicting = false) {
   busy.value = true
   message.value = null
+  portConflict.value = null
   try {
     await $fetch(`/api/servers/${props.server.id}/resources`, {
       method: 'PATCH',
       body: {
         memoryMb: Number(memoryMb.value),
+        hostPort: Number(hostPort.value),
+        stopConflicting,
         ...(isMinecraft.value ? { aikarFlags: aikar.value } : {}),
       },
     })
@@ -83,6 +92,8 @@ async function saveResources() {
     await refreshNuxtData()
   } catch (e: any) {
     message.value = { text: e?.data?.statusMessage ?? "Le changement a échoué.", ok: false }
+    const conflictId = e?.data?.data?.conflictId
+    portConflict.value = conflictId ? { id: conflictId, name: e.data.data.conflictName } : null
   } finally {
     busy.value = false
   }
@@ -198,6 +209,13 @@ async function resetWorld() {
           mono
           :disabled="!stopped"
         />
+        <UiField
+          v-model.number="hostPort"
+          label="Port"
+          type="number"
+          mono
+          :disabled="!stopped"
+        />
       </div>
 
       <!-- La décomposition, dite explicitement : sans elle, l'écart entre la
@@ -244,14 +262,23 @@ async function resetWorld() {
         Arrête le serveur pour modifier ces valeurs : le conteneur doit être refait.
       </p>
 
-      <UiBtn
-        variant="primary"
-        class="mt-3"
-        :disabled="busy || !stopped || !resourcesDirty"
-        @click="saveResources"
-      >
-        Appliquer
-      </UiBtn>
+      <div class="mt-3 flex flex-wrap items-center gap-2.5">
+        <UiBtn
+          variant="primary"
+          :disabled="busy || !stopped || !resourcesDirty"
+          @click="saveResources()"
+        >
+          Appliquer
+        </UiBtn>
+        <UiBtn
+          v-if="portConflict"
+          variant="ghost"
+          :disabled="busy"
+          @click="saveResources(true)"
+        >
+          Arrêter « {{ portConflict.name }} » et appliquer
+        </UiBtn>
+      </div>
     </section>
 
     <!-- Clonage -->
