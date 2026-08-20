@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
   // Le dossier de destination voyage avec les fichiers, dans le même envoi.
   const dest = parts.find((p) => p.name === 'path' && !p.filename)
   const relDir = dest ? dest.data.toString('utf8') : ''
-  const targetDir = safeJoin(row.data_dir, relDir)
 
   const files = parts.filter((p) => p.filename)
   if (!files.length) {
@@ -37,15 +36,22 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Le nom vient du navigateur : on n'en garde que le dernier segment, pour
-    // qu'un chemin glissé dedans ne puisse pas écrire ailleurs.
-    const base = (file.filename ?? 'fichier').split(/[/\\]/).pop()!
-    const target = join(targetDir, base)
-    safeJoin(row.data_dir, join(relDir, base))
+    // Le nom vient du navigateur : glisser un dossier y ajoute son chemin
+    // relatif (`sous-dossier/fichier.txt`), qu'on préserve pour recréer
+    // l'arborescence — mais chaque segment `.`/`..` est écarté, pour qu'un
+    // chemin piégé ne puisse pas remonter hors du dossier du serveur.
+    const relFile = (file.filename ?? 'fichier')
+      .replace(/\\/g, '/')
+      .split('/')
+      .filter((seg) => seg && seg !== '.' && seg !== '..')
+      .join('/')
+    if (!relFile) continue
+
+    const target = safeJoin(row.data_dir, join(relDir, relFile))
 
     await mkdir(dirname(target), { recursive: true })
     await writeFile(target, file.data)
-    written.push(base)
+    written.push(relFile)
   }
 
   return { ok: true, written }

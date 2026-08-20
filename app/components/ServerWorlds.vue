@@ -63,6 +63,50 @@ function activate(name: string) {
   })
 }
 
+/* -- Import d'un monde ------------------------------------------------------ */
+
+const worldName = ref('')
+const worldFile = ref<File | null>(null)
+const worldDragging = ref(false)
+const worldInput = ref<HTMLInputElement | null>(null)
+
+function pickWorldFile(file: File | null | undefined) {
+  if (!file) return
+  worldFile.value = file
+  // Le nom du dossier se propose à partir de l'archive, mais reste modifiable :
+  // c'est utile pour importer plusieurs sauvegardes du même monde sans conflit.
+  if (!worldName.value.trim()) worldName.value = file.name.replace(/\.zip$/i, '')
+}
+
+function onWorldPick(e: Event) {
+  pickWorldFile((e.target as HTMLInputElement).files?.[0])
+}
+
+function onWorldDrop(e: DragEvent) {
+  worldDragging.value = false
+  pickWorldFile(e.dataTransfer?.files?.[0])
+}
+
+function uploadWorld() {
+  if (!worldFile.value || !worldName.value.trim()) return
+  return run(async () => {
+    const form = new FormData()
+    form.append('name', worldName.value.trim())
+    form.append('file', worldFile.value as File)
+
+    const res = await $fetch<{ name: string }>(`/api/servers/${props.serverId}/worlds/upload`, {
+      method: 'POST',
+      body: form,
+    })
+
+    worldFile.value = null
+    worldName.value = ''
+    if (worldInput.value) worldInput.value.value = ''
+    await refresh()
+    return `« ${res.name} » importé. Charge-le pour le jouer.`
+  })
+}
+
 function backupWorld() {
   return run(async () => {
     await $fetch(`/api/servers/${props.serverId}/backups`, {
@@ -203,6 +247,53 @@ function saveResourcePack() {
           Une fraction de la taille d'une archive complète, et la restaurer ne
           touche ni aux mods ni à la configuration.
         </p>
+      </div>
+
+      <!-- Import d'un monde -->
+      <div class="mt-4 border-t border-vein pt-3">
+        <h4 class="text-[12px] text-ash-dim">Importer un monde</h4>
+        <p class="mt-1 text-[12px] text-ash-dim">
+          Une archive .zip contenant <span class="font-mono">level.dat</span> à sa
+          racine, ou un unique dossier qui le contient.
+        </p>
+
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            v-model="worldName"
+            type="text"
+            placeholder="nom du dossier"
+            class="w-40 rounded-block border border-vein bg-deepslate px-2.5 py-1.5 font-mono text-[12px] text-chalk placeholder:text-ash-dim focus:border-torch focus:outline-none"
+          />
+
+          <div
+            class="flex min-w-[14rem] flex-1 items-center justify-between gap-3 rounded-block border border-dashed px-3 py-1.5 transition-colors"
+            :class="worldDragging ? 'border-torch bg-torch-dim/10' : 'border-vein'"
+            @dragover.prevent="worldDragging = true"
+            @dragleave.prevent="worldDragging = false"
+            @drop.prevent="onWorldDrop"
+          >
+            <span class="truncate text-[12px] text-ash">
+              {{
+                worldFile
+                  ? worldFile.name
+                  : worldDragging
+                    ? 'Relâche pour déposer le .zip'
+                    : 'Glisse un .zip ici, ou choisis un fichier'
+              }}
+            </span>
+            <input ref="worldInput" type="file" accept=".zip" class="hidden" @change="onWorldPick" />
+            <UiBtn size="sm" @click="worldInput?.click()">Choisir</UiBtn>
+          </div>
+
+          <UiBtn
+            variant="primary"
+            size="sm"
+            :disabled="busy || !worldFile || !worldName.trim()"
+            @click="uploadWorld"
+          >
+            Importer
+          </UiBtn>
+        </div>
       </div>
     </section>
 

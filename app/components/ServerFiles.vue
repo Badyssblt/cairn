@@ -182,14 +182,23 @@ const uploading = ref(false)
 const dragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-async function upload(list: FileList | null) {
-  if (!list?.length) return
+/** Un fichier à envoyer, avec son chemin relatif au dossier déposé. */
+interface DroppedFile {
+  file: File
+  relPath: string
+}
+
+async function upload(items: DroppedFile[]) {
+  if (!items.length) return
   uploading.value = true
   notice.value = null
   try {
     const form = new FormData()
     form.append('path', path.value)
-    for (const f of list) form.append('files', f)
+    // Le troisième argument fixe le nom transmis au serveur : c'est lui qui
+    // porte le chemin relatif (`sous-dossier/fichier.txt`) quand l'envoi
+    // vient d'un dossier glissé, plutôt que le seul nom du fichier.
+    for (const { file, relPath } of items) form.append('files', file, relPath)
 
     const res = await $fetch<{ written: string[] }>(
       `/api/servers/${props.serverId}/upload`,
@@ -209,6 +218,59 @@ async function upload(list: FileList | null) {
     uploading.value = false
     if (fileInput.value) fileInput.value.value = ''
   }
+}
+
+function uploadFileList(list: FileList | null) {
+  if (!list?.length) return
+  return upload([...list].map((file) => ({ file, relPath: file.name })))
+}
+
+/**
+ * Traverse un dossier déposé pour en récupérer chaque fichier avec son
+ * chemin relatif — l'API `DataTransferItem.webkitGetAsEntry` est le seul
+ * moyen dont dispose le navigateur pour distinguer un dossier glissé d'un
+ * fichier, `dataTransfer.files` les traitant tous deux comme des fichiers.
+ */
+function readEntry(entry: FileSystemEntry, prefix: string): Promise<DroppedFile[]> {
+  if (entry.isFile) {
+    return new Promise((res, rej) => {
+      ;(entry as FileSystemFileEntry).file(
+        (file) => res([{ file, relPath: prefix + entry.name }]),
+        rej,
+      )
+    })
+  }
+
+  const reader = (entry as FileSystemDirectoryEntry).createReader()
+  const readBatch = (): Promise<FileSystemEntry[]> =>
+    new Promise((res, rej) => reader.readEntries(res, rej))
+
+  return (async () => {
+    const children: FileSystemEntry[] = []
+    // `readEntries` ne rend qu'un lot à la fois (100 en général) : il faut
+    // le rappeler jusqu'à ce qu'il rende un tableau vide.
+    for (let batch = await readBatch(); batch.length; batch = await readBatch()) {
+      children.push(...batch)
+    }
+    const nested = await Promise.all(children.map((c) => readEntry(c, `${prefix}${entry.name}/`)))
+    return nested.flat()
+  })()
+}
+
+async function collectDropped(dt: DataTransfer): Promise<DroppedFile[]> {
+  const items = dt.items
+  if (!items?.length) return [...(dt.files ?? [])].map((file) => ({ file, relPath: file.name }))
+
+  const entries = [...items]
+    .map((it) => it.webkitGetAsEntry?.())
+    .filter((e): e is FileSystemEntry => Boolean(e))
+
+  // Navigateur sans `webkitGetAsEntry` : on retombe sur la liste plate, qui
+  // ne sait envoyer que des fichiers isolés.
+  if (!entries.length) return [...(dt.files ?? [])].map((file) => ({ file, relPath: file.name }))
+
+  const nested = await Promise.all(entries.map((e) => readEntry(e, '')))
+  return nested.flat()
 }
 
 /** Une archive déposée se décompresse sur place : c'est ce qui rend l'envoi
@@ -233,9 +295,10 @@ function downloadUrl(p: string) {
   return `/api/servers/${props.serverId}/download?path=${encodeURIComponent(p)}`
 }
 
-function onDrop(e: DragEvent) {
+async function onDrop(e: DragEvent) {
   dragging.value = false
-  upload(e.dataTransfer?.files ?? null)
+  if (!e.dataTransfer) return
+  await upload(await collectDropped(e.dataTransfer))
 }
 
 const size = (n: number) =>
@@ -343,7 +406,7 @@ onMounted(() => open(''))
             ? 'Envoi en cours…'
             : dragging
               ? 'Relâche pour envoyer ici'
-              : 'Glisse des fichiers ici pour les ajouter à ce dossier.'
+              : 'Glisse des fichiers ou des dossiers ici pour les ajouter à ce dossier.'
         }}
       </p>
       <input
@@ -351,7 +414,7 @@ onMounted(() => open(''))
         type="file"
         multiple
         class="hidden"
-        @change="upload(($event.target as HTMLInputElement).files)"
+        @change="uploadFileList(($event.target as HTMLInputElement).files)"
       />
       <UiBtn size="sm" :disabled="uploading" @click="fileInput?.click()">
         Choisir des fichiers
