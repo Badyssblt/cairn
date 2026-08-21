@@ -381,13 +381,7 @@ onMounted(() => open(''))
       <div v-if="viewMode === 'form' && structured" class="max-h-[30rem] overflow-y-auto p-3">
         <StructuredValue v-model="structuredDraft" />
       </div>
-      <textarea
-        v-else
-        v-model="editing.content"
-        spellcheck="false"
-        aria-label="Contenu du fichier"
-        class="h-[26rem] w-full resize-y bg-deepslate p-3 font-mono text-[12px] leading-relaxed text-chalk focus:outline-none"
-      />
+      <CodeEditor v-else v-model="editing.content" :path="editing.path" />
     </div>
 
     <!-- Dépôt : le glisser-déposer est le geste attendu, le bouton reste
