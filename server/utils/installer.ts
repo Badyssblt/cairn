@@ -223,6 +223,14 @@ async function downloadOne(
  * Cette archive porte toute la configuration du pack — configs des mods,
  * scripts, listes de recettes. Sans elle, les mods sont bien là mais tournent
  * avec leurs réglages par défaut : ce n'est plus le modpack annoncé.
+ *
+ * C'est l'export standard CurseForge (`manifest.json` + un dossier
+ * `overrides/` qui porte le vrai contenu — voir le champ `overrides` du
+ * manifeste, quasi toujours `"overrides"` mais pas garanti). Le dossier
+ * n'est qu'un emballage : il faut le retirer en extrayant, sinon les fichiers
+ * atterrissent dans `overrides/config/...` au lieu de `config/...`, là où le
+ * serveur va réellement les chercher — les quêtes FTB Quests, par exemple, se
+ * retrouvent invisibles alors qu'elles sont bien sur le disque.
  */
 async function applyOverrides(dataDir: string) {
   const archive = join(dataDir, 'overrides.zip')
@@ -235,12 +243,35 @@ async function applyOverrides(dataDir: string) {
 
   const entries = unzipSync(new Uint8Array(raw))
 
+  let overridesFolder = 'overrides'
+  try {
+    const manifest = JSON.parse(
+      new TextDecoder().decode(entries['manifest.json']),
+    )
+    if (typeof manifest.overrides === 'string' && manifest.overrides) {
+      overridesFolder = manifest.overrides
+    }
+  } catch {
+    // pas de manifeste CurseForge ou champ absent : on garde le nom par défaut
+  }
+  const prefix = `${overridesFolder}/`
+  // Au cas où une archive ne suivrait pas le schéma CurseForge (pas de
+  // dossier overrides/) : mieux vaut tout extraire à plat, comme avant,
+  // que de silencieusement ne rien poser du tout.
+  const hasOverridesFolder = Object.keys(entries).some((n) => n.startsWith(prefix))
+
   for (const [name, content] of Object.entries(entries)) {
     if (name.endsWith('/') || content.length === 0) continue
 
+    let relative = name
+    if (hasOverridesFolder) {
+      if (!name.startsWith(prefix)) continue // manifest.json, modlist.html, etc.
+      relative = name.slice(prefix.length)
+    }
+
     // Une archive piégée pourrait viser hors du dossier du serveur : on
     // n'écrit jamais ailleurs que sous dataDir.
-    const target = resolve(dataDir, name)
+    const target = resolve(dataDir, relative)
     if (target !== dataDir && !target.startsWith(dataDir + sep)) continue
 
     await mkdir(dirname(target), { recursive: true })
