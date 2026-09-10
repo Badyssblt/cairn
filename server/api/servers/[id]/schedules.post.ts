@@ -8,7 +8,9 @@ const Body = z.object({
   atHour: z.number().int().min(0).max(23).default(4),
   atMinute: z.number().int().min(0).max(59).default(0),
   weekday: z.number().int().min(0).max(6).optional().nullable(),
-  everyHours: z.number().int().min(1).max(168).optional().nullable(),
+  // Jusqu'à une semaine : au-delà, « chaque jour » ou « chaque semaine »
+  // décrivent mieux l'intention qu'un intervalle en minutes.
+  everyMinutes: z.number().int().min(1).max(10080).optional().nullable(),
   enabled: z.boolean().default(true),
   // Au-delà d'une demi-heure, l'annonce est oubliée avant d'avoir servi.
   warnMinutes: z.number().int().min(0).max(30).default(0),

@@ -5,7 +5,7 @@ import type { ServerRow } from './servers'
  * TÂCHES PLANIFIÉES
  *
  * La cadence est décrite en clair — quotidien, hebdomadaire, toutes les N
- * heures — et non en cron. Écrire `0 4 * * *` est une compétence, pas une
+ * minutes — et non en cron. Écrire `0 4 * * *` est une compétence, pas une
  * intention ; les trois formes ci-dessous couvrent ce que l'on planifie
  * réellement sur un serveur de jeu, et se lisent sans documentation.
  */
@@ -23,7 +23,7 @@ export interface ScheduleRow {
   at_minute: number
   at_hour: number
   weekday: number | null
-  every_hours: number | null
+  every_minutes: number | null
   enabled: number
   last_run_at: number | null
   last_status: string | null
@@ -50,14 +50,14 @@ export function listSchedules(serverId: string): ScheduleRow[] {
  * sans cette garantie relancerait la tâche en boucle dans la minute qui suit.
  */
 export function nextRun(s: Pick<ScheduleRow,
-  'frequency' | 'at_hour' | 'at_minute' | 'weekday' | 'every_hours'>,
+  'frequency' | 'at_hour' | 'at_minute' | 'weekday' | 'every_minutes'>,
   from = Date.now(),
 ): number {
   const d = new Date(from)
 
   if (s.frequency === 'interval') {
-    const hours = Math.max(1, s.every_hours ?? 6)
-    return from + hours * 3600_000
+    const minutes = Math.max(1, s.every_minutes ?? 360)
+    return from + minutes * 60_000
   }
 
   const next = new Date(d)
@@ -84,7 +84,7 @@ export interface ScheduleInput {
   atHour: number
   atMinute: number
   weekday?: number | null
-  everyHours?: number | null
+  everyMinutes?: number | null
   enabled: boolean
   warnMinutes?: number
   skipIfPlayers?: boolean
@@ -97,21 +97,21 @@ export function createSchedule(serverId: string, input: ScheduleInput): string {
     at_hour: input.atHour,
     at_minute: input.atMinute,
     weekday: input.weekday ?? null,
-    every_hours: input.everyHours ?? null,
+    every_minutes: input.everyMinutes ?? null,
   }
 
   useDb()
     .prepare(
       `INSERT INTO schedules
          (id, server_id, name, action, payload, frequency, at_minute, at_hour,
-          weekday, every_hours, enabled, next_run_at, created_at,
+          weekday, every_minutes, enabled, next_run_at, created_at,
           warn_minutes, skip_if_players)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       id, serverId, input.name, input.action, input.payload ?? null,
       input.frequency, input.atMinute, input.atHour,
-      input.weekday ?? null, input.everyHours ?? null,
+      input.weekday ?? null, input.everyMinutes ?? null,
       input.enabled ? 1 : 0, nextRun(spec), Date.now(),
       interrupts(input.action) ? (input.warnMinutes ?? 0) : 0,
       interrupts(input.action) && input.skipIfPlayers ? 1 : 0,

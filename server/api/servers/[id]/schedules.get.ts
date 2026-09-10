@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       atHour: s.at_hour,
       atMinute: s.at_minute,
       weekday: s.weekday,
-      everyHours: s.every_hours,
+      everyMinutes: s.every_minutes,
       enabled: Boolean(s.enabled),
       lastRunAt: s.last_run_at,
       lastStatus: s.last_status,

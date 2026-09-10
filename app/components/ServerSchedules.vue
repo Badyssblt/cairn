@@ -10,7 +10,7 @@ interface Schedule {
   atHour: number
   atMinute: number
   weekday: number | null
-  everyHours: number | null
+  everyMinutes: number | null
   enabled: boolean
   lastRunAt: number | null
   lastStatus: string | null
@@ -65,7 +65,7 @@ const form = reactive({
   atHour: 4,
   atMinute: 0,
   weekday: 0,
-  everyHours: 6,
+  everyMinutes: 360,
   warnMinutes: 5,
   skipIfPlayers: false,
 })
@@ -94,7 +94,7 @@ async function create() {
         atHour: Number(form.atHour),
         atMinute: Number(form.atMinute),
         weekday: form.frequency === 'weekly' ? Number(form.weekday) : null,
-        everyHours: form.frequency === 'interval' ? Number(form.everyHours) : null,
+        everyMinutes: form.frequency === 'interval' ? Number(form.everyMinutes) : null,
         enabled: true,
         warnMinutes:
           interrupting.value && data.value?.canAnnounce ? Number(form.warnMinutes) : 0,
@@ -130,7 +130,13 @@ function cadence(s: Schedule) {
   const time = `${String(s.atHour).padStart(2, '0')} h ${String(s.atMinute).padStart(2, '0')}`
   if (s.frequency === 'daily') return `chaque jour à ${time}`
   if (s.frequency === 'weekly') return `chaque ${DAYS[s.weekday ?? 0]} à ${time}`
-  return `toutes les ${s.everyHours} heures`
+
+  const m = s.everyMinutes ?? 0
+  if (m % 60 === 0 && m >= 60) {
+    const h = m / 60
+    return `toutes les ${h} heure${h > 1 ? 's' : ''}`
+  }
+  return `toutes les ${m} minute${m > 1 ? 's' : ''}`
 }
 
 const actionLabel = (a: string) => ACTIONS.find((x) => x.value === a)?.label ?? a
@@ -189,7 +195,7 @@ const actionLabel = (a: string) => ACTIONS.find((x) => x.value === a)?.label ?? 
           >
             <option value="daily">Chaque jour</option>
             <option value="weekly">Chaque semaine</option>
-            <option value="interval">Toutes les N heures</option>
+            <option value="interval">Toutes les N minutes</option>
           </select>
         </div>
 
@@ -205,7 +211,8 @@ const actionLabel = (a: string) => ACTIONS.find((x) => x.value === a)?.label ?? 
         </div>
 
         <div v-if="form.frequency === 'interval'">
-          <UiField v-model.number="form.everyHours" label="Toutes les (heures)" type="number" mono />
+          <UiField v-model.number="form.everyMinutes" label="Toutes les (minutes)" type="number" mono />
+          <p class="mt-1.5 text-[12px] text-ash-dim">Par exemple 30 pour une demi-heure, 360 pour 6 heures.</p>
         </div>
 
         <div v-else class="flex gap-2">

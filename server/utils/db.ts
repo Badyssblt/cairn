@@ -247,6 +247,15 @@ const MIGRATIONS: string[] = [
   DROP TABLE servers;
   ALTER TABLE servers_new RENAME TO servers;
   `,
+
+  // 15 — « Toutes les N heures » ne couvre pas un redémarrage anti-fuite
+  //      toutes les 30 minutes. La cadence de l'intervalle est donc stockée
+  //      en minutes plutôt qu'en heures : ça couvre les deux échelles sans
+  //      ajouter une deuxième colonne ni une unité à choisir.
+  `
+  ALTER TABLE schedules RENAME COLUMN every_hours TO every_minutes;
+  UPDATE schedules SET every_minutes = every_minutes * 60 WHERE every_minutes IS NOT NULL;
+  `,
 ]
 
 let instance: Database.Database | null = null
