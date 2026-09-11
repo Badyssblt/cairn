@@ -256,6 +256,22 @@ const MIGRATIONS: string[] = [
   ALTER TABLE schedules RENAME COLUMN every_hours TO every_minutes;
   UPDATE schedules SET every_minutes = every_minutes * 60 WHERE every_minutes IS NOT NULL;
   `,
+
+  // 16 — Journal des commandes. Minecraft diffuse au journal, en clair, le
+  //      retour de chaque commande d'admin (« [Steve: Given [Diamond] * 64 to
+  //      Steve] ») : ce n'est pas un événement qu'on émet nous-mêmes, mais une
+  //      ligne de log qu'on intercepte au vol pour savoir qui a fait quoi.
+  `
+  CREATE TABLE command_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id  TEXT NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+    player     TEXT NOT NULL,
+    verb       TEXT NOT NULL,
+    detail     TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX idx_command_log_server_ts ON command_log(server_id, created_at DESC);
+  `,
 ]
 
 let instance: Database.Database | null = null

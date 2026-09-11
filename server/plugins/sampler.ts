@@ -72,9 +72,17 @@ export default defineNitroPlugin((nitro) => {
           console.error(`[sampler] ${row.id}:`, (e as Error).message)
         }
       }
+
+      // Démarre ou arrête le suivi du journal des commandes selon quels
+      // serveurs Minecraft tournent réellement.
+      await syncCommandWatchers(rows).catch((e) =>
+        console.error('[sampler] suivi des commandes:', (e as Error).message),
+      )
+
       if (++ticks % PURGE_EVERY === 0) {
         purgeOldSamples()
         purgeOldEvents()
+        purgeOldCommandLog()
       }
 
       // Les tâches planifiées se réveillent au même rythme : une granularité
@@ -109,5 +117,6 @@ export default defineNitroPlugin((nitro) => {
   nitro.hooks.hook('close', () => {
     clearInterval(timer)
     closeAllRcon()
+    stopAllCommandWatchers()
   })
 })

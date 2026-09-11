@@ -19,6 +19,7 @@ defineProps<{
     | 'moon'
     | 'system'
     | 'bell'
+    | 'eye'
 }>()
 </script>
 
@@ -105,6 +106,12 @@ defineProps<{
     <template v-else-if="name === 'bell'">
       <path d="M6 9.5a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 15 6 13.5 6 9.5z" />
       <path d="M10 19a2 2 0 0 0 4 0" />
+    </template>
+
+    <!-- Journal des commandes : un œil qui surveille -->
+    <template v-else-if="name === 'eye'">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.8" />
     </template>
 
     <template v-else>

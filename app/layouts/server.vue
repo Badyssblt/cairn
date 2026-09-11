@@ -13,7 +13,7 @@ const route = useRoute()
 interface Section {
   slug: string
   label: string
-  icon: 'servers' | 'console' | 'files' | 'players' | 'plus' | 'config' | 'settings' | 'danger'
+  icon: 'servers' | 'console' | 'files' | 'players' | 'plus' | 'config' | 'settings' | 'danger' | 'eye'
   /** N'apparaît que sur un serveur Minecraft. */
   minecraftOnly?: boolean
 }
@@ -23,6 +23,9 @@ const SECTIONS: Section[] = [
   { slug: 'console', label: 'Console', icon: 'console' as const },
   { slug: 'files', label: 'Fichiers', icon: 'files' as const },
   { slug: 'players', label: 'Joueurs', icon: 'players' as const },
+  // Le retour des commandes d'admin n'existe que sur Minecraft : les autres
+  // jeux n'ont pas ce format de journal à intercepter.
+  { slug: 'commands', label: 'Commandes', icon: 'eye' as const, minecraftOnly: true },
   { slug: 'content', label: 'Mods & plugins', icon: 'plus' as const },
   // Propre à Minecraft : les autres jeux n'ont ni datapacks ni dossiers de
   // monde interchangeables. La page le dit d'elle-même si on y arrive.
